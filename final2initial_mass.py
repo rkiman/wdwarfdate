@@ -1,4 +1,5 @@
 import numpy as np
+#import matplotlib.pyplot as plt
 
 def calc_initial_mass(final_mass,e_final_mass,n_mc):
     
@@ -13,13 +14,20 @@ def calc_initial_mass(final_mass,e_final_mass,n_mc):
         final_mass_array = np.random.normal(final_mass[i],e_final_mass[i],
                                             n_mc)      
         initial_mass_array = np.ones(n_mc)*np.nan
-        mask1 = (0.56 < final_mass_array) * (final_mass_array <= 0.72)
-        mask2 = (0.72 < final_mass_array) * (final_mass_array <= 0.86)
-        mask3 = (0.86 < final_mass_array) * (final_mass_array <= 1.24)
-        initial_mass_array[mask1] = (final_mass_array[mask1] - 0.489)/0.08
-        initial_mass_array[mask2] = (final_mass_array[mask2] - 0.184)/0.187
-        initial_mass_array[mask3] = (final_mass_array[mask3] - 0.471)/0.107
+        for j in range(n_mc):
+            if((0.5554 < final_mass_array[j]) and (final_mass_array[j] <= 0.717)):
+                initial_mass_array[j] = (final_mass_array[j] - 0.489)/0.08
+            elif((0.71695 < final_mass_array[j]) and (final_mass_array[j] <= 0.8572)):
+                initial_mass_array[j] = (final_mass_array[j] - 0.184)/0.187
+            elif((0.8562 < final_mass_array[j]) and (final_mass_array[j] <= 1.2414)):
+                initial_mass_array[j] = (final_mass_array[j] - 0.471)/0.107
         
         initial_mass.append(initial_mass_array)
 
     return np.array(initial_mass)
+
+
+
+#mass = calc_initial_mass(1.1,0.1,2000)
+#plt.hist(mass[0])
+#plt.show()
