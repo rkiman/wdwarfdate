@@ -5,9 +5,9 @@ from astropy.table import Table
 def fit_cooling_model(model,plot_fit,deg_list=[[6,6],[6,6],[8,7],[7,7],[7,8]]):
 
     if(model == 'DA'):
-        table_model = np.loadtxt('Models/cooling_models/Table_DA')
+        table_model = np.loadtxt('/Users/rociokiman/Documents/wdwarfdate/Models/cooling_models/Table_DA')
     if(model == 'DB'):
-        table_model = np.loadtxt('Models/cooling_models/Table_DB')
+        table_model = np.loadtxt('/Users/rociokiman/Documents/wdwarfdate/Models/cooling_models/Table_DB')
             
     teff_model = table_model[:,0]
     logg_model = table_model[:,1]
@@ -57,7 +57,7 @@ def fit_cooling_model(model,plot_fit,deg_list=[[6,6],[6,6],[8,7],[7,7],[7,8]]):
         ax2.set_ylabel('Mass')
         plt.tight_layout()
         name = 'model_'+model+'_logg_'+str(x)+'.png'
-        plt.savefig('Models/cooling_models/Fits/'+name, tight_layout=True,
+        plt.savefig('/Users/rociokiman/Documents/wdwarfdate/Models/cooling_models/Fits/'+name, tight_layout=True,
                     dpi=300)
         if(plot_fit==True):
             plt.show()
@@ -67,7 +67,7 @@ def fit_cooling_model(model,plot_fit,deg_list=[[6,6],[6,6],[8,7],[7,7],[7,8]]):
 
 def fit_eep_model(feh,vvcrit,deg=8):
     
-    file = 'Models/MIST/MIST_v1.2_feh_'+feh+'_afe_p0.0_vvcrit'+vvcrit+'_EEPS_sum.csv'
+    file = '/Users/rociokiman/Documents/wdwarfdate/Models/MIST/MIST_v1.2_feh_'+feh+'_afe_p0.0_vvcrit'+vvcrit+'_EEPS_sum.csv'
     table_model = Table.read(file)
     
     initial_mass = table_model['initial_mass']
@@ -86,7 +86,7 @@ def fit_eep_model(feh,vvcrit,deg=8):
     plt.legend()
     plt.xlabel(r'$log_{10}$(initial mass)')
     plt.ylabel(r'$log_{10}$(ms age)')
-    plt.savefig('Models/MIST/Fits/fit_'+label+'.png', tight_layout=True,dpi=300)
+    plt.savefig('/Users/rociokiman/Documents/wdwarfdate/Models/MIST/Fits/fit_'+label+'.png', tight_layout=True,dpi=300)
     plt.close(f)
     return res_age
         
