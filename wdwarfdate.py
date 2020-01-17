@@ -3,59 +3,53 @@ from coolingage import calc_cooling_age
 from final2initial_mass import calc_initial_mass
 from ms_age import calc_ms_age
 #import matplotlib.pyplot as plt
-#from astropy.table import Table
+from astropy.table import Table
 
-def calc_wd_age(teff,e_teff,logg,e_logg,final_mass,e_final_mass,n_mc=2000,
+def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
                 model_wd='DA',feh='p0.00',vvcrit='0.4'):
-
-    N = len(logg)
     
-    cooling_age,final_mass2 = calc_cooling_age(teff,e_teff,logg,e_logg,n_mc,
+    cooling_age,final_mass = calc_cooling_age(teff,e_teff,logg,e_logg,n_mc,
                                                model=model_wd)
     
-    initial_mass = calc_initial_mass(final_mass,e_final_mass,n_mc)
+    initial_mass = calc_initial_mass(final_mass,n_mc)
     
     ms_age = calc_ms_age(initial_mass,feh=feh,vvcrit=vvcrit)
     
-    final_mass_median = np.ones(N)*np.nan
-    final_mass_std = np.ones(N)*np.nan
-    initial_mass_median = np.ones(N)*np.nan
-    initial_mass_std = np.ones(N)*np.nan
-    cooling_age_median = np.ones(N)*np.nan
-    cooling_age_std = np.ones(N)*np.nan
-    ms_age_median = np.ones(N)*np.nan
-    ms_age_std = np.ones(N)*np.nan
-    total_age_median = np.ones(N)*np.nan
-    total_age_std = np.ones(N)*np.nan
+    results = Table()
     
-    for i in range(N):
-        final_mass_median[i] = np.nanmedian(final_mass2[i])
-        final_mass_std[i] = np.nanstd(final_mass2[i])
-        initial_mass_median[i] = np.nanmedian(initial_mass[i])
-        initial_mass_std[i] = np.nanstd(initial_mass[i])
-        cooling_age_median[i] = np.nanmedian(cooling_age[i])
-        cooling_age_std[i] = np.nanstd(cooling_age[i])
-        ms_age_median[i] = np.nanmedian(ms_age[i])
-        ms_age_std[i] = np.nanstd(ms_age[i])
-        total_age_median[i] = np.nanmedian(cooling_age[i] + ms_age[i])
-        total_age_std[i] = np.nanstd(cooling_age[i] + ms_age[i])
+    results['final_mass_median'] = np.array([np.nanmedian(x) for x in final_mass])
+    results['final_mass_std'] = np.array([np.nanstd(x) for x in final_mass])
+    results['initial_mass_median'] = np.array([np.nanmedian(x) for x in initial_mass])
+    results['initial_mass_std'] = np.array([np.nanstd(x) for x in initial_mass])
+
+    results['cooling_age_median'] = np.array([np.nanmedian(x) for x in cooling_age])
+    results['cooling_age_std'] = np.array([np.nanstd(x) for x in cooling_age])
+
+    results['ms_age_median'] = np.array([np.nanmedian(x) for x in ms_age])
+    results['ms_age_std'] = np.array([np.nanstd(x) for x in ms_age])
+
+    results['total_age_median'] = np.array([np.nanmedian(x+y) for x,y in zip(ms_age,cooling_age)])
+    results['total_age_std'] = np.array([np.nanstd(x+y) for x,y in zip(ms_age,cooling_age)])    
     
-    return total_age_median,total_age_std
+    return results
 
 
 '''
 wd = Table.read('/Users/rociokiman/Documents/M-dwarfs-Age-Activity-Relation/Catalogs/WD_M_Pairs_new.csv')
 
-logg = wd['loggH_wd']#np.array([7.966909,9.074503])
-e_logg = wd['e_loggH_wd']#np.array([0.09473,0.62385])
+logg = np.array([9.20])
+e_logg = np.array([0.07])
 
-teff = wd['TeffH_wd']#np.array([6022.601071,13065.57019])
-e_teff = wd['e_TeffH_wd']#np.array([154.752034,4909.612193])
+teff = np.array([42700])
+e_teff = np.array([800])
 
-final_mass = wd['MassH_wd']#np.array([0.568221,1.228519])
-e_final_mass = wd['e_MassH_wd']#np.array([0.252533,0.29186])
+results = calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
+            model_wd='DA',feh='p0.00',vvcrit='0.4')
 
-
+print(results)
+print('Cooling Age: {}yr +/- {}yr\nMS Age: {}yr +\- {}yr\nTotal Age: {}yr +\- {}yr'.format(results['cooling_age_median'][0]/1e6,
+      results['cooling_age_std'][0]/1e6,results['ms_age_median'][0]/1e6,results['ms_age_std'][0]/1e6,
+      results['total_age_median'][0]/1e6,results['total_age_std'][0]/1e6))
 
 n_mc = 2000
 
