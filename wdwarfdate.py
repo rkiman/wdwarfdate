@@ -7,6 +7,7 @@ from astropy.table import Table
 
 def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
                 model_wd='DA',feh='p0.00',vvcrit='0.0',
+                model_ifmr = 'Cummings 2018',
                 return_distributions=False):
     
     if(not isinstance(teff,np.ndarray)):
@@ -27,7 +28,7 @@ def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
     cooling_age_dist,final_mass_dist = calc_cooling_age(teff_dist,logg_dist,
                                                         n_mc,N,model=model_wd)
     
-    initial_mass_dist = calc_initial_mass(final_mass_dist,n_mc)
+    initial_mass_dist = calc_initial_mass(model_ifmr,final_mass_dist,n_mc)
     
     ms_age_dist = calc_ms_age(initial_mass_dist,feh=feh,vvcrit=vvcrit)
     

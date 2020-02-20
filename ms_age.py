@@ -12,7 +12,7 @@ def calc_ms_age(initial_mass_dist,feh,vvcrit):
     
     model_initial_mass = table_model['initial_mass']
     model_ms_age = table_model['ms_age']
-    
+
     f_ms_age = interpolate.interp1d(model_initial_mass, model_ms_age, kind='cubic')
     '''
     x=np.linspace(0.1,1,100)
