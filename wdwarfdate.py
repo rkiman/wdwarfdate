@@ -67,7 +67,7 @@ def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
 
 '''
 wd = Table.read('/Users/rociokiman/Documents/M-dwarfs-Age-Activity-Relation/Catalogs/WD_M_Pairs_new.csv')
-'''
+
 logg = np.array([8.195693])
 e_logg = np.array([0.160218])
 
@@ -109,7 +109,7 @@ plt.axvline(x=results['total_age_err_low'][0]/1e6,color='k',linestyle='--')
 plt.axvline(x=650,color='k')
 plt.show()
 
-'''
+
 n_mc = 2000
 
 plt.plot(final_mass,final_mass_median,'.')
