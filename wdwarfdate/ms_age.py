@@ -5,7 +5,7 @@ from scipy import interpolate
 def calc_ms_age(initial_mass_dist,feh,vvcrit):
     ms_age_dist = []
     
-    file = '/Users/rociokiman/Documents/wdwarfdate/Models/MIST/MIST_v1.2_feh_'+feh+'_afe_p0.0_vvcrit'+vvcrit+'_EEPS_sum.csv'
+    file = 'Models/MIST/MIST_v1.2_feh_'+feh+'_afe_p0.0_vvcrit'+vvcrit+'_EEPS_sum.csv'
     table_model = Table.read(file)
     
     model_initial_mass = table_model['initial_mass']

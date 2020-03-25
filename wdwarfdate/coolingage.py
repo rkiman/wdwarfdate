@@ -4,11 +4,11 @@ from scipy import interpolate
 def calc_cooling_age(teff_dist,logg_dist,n_mc,N,model,plot_fit=False):
         
     if(model == 'DA'):
-        table_model = np.loadtxt('/Users/rociokiman/Documents/wdwarfdate/Models/cooling_models/Table_DA')
+        table_model = np.loadtxt('Models/cooling_models/Table_DA')
         rows = 51
         
     if(model == 'DB'):
-        table_model = np.loadtxt('/Users/rociokiman/Documents/wdwarfdate/Models/cooling_models/Table_DB')
+        table_model = np.loadtxt('Models/cooling_models/Table_DB')
         rows = 62
     
 

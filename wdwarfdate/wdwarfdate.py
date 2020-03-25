@@ -1,9 +1,17 @@
 import numpy as np
-from coolingage import calc_cooling_age
-from final2initial_mass import calc_initial_mass
-from ms_age import calc_ms_age
-import matplotlib.pyplot as plt
+from .coolingage import calc_cooling_age
+from .final2initial_mass import calc_initial_mass
+from .ms_age import calc_ms_age
+from .bayesian_age import ln_posterior_prob
 from astropy.table import Table
+
+def calc_bayesian_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
+                         model_wd='DA',feh='p0.00',vvcrit='0.0',
+                         model_ifmr = 'Cummings 2018',
+                         return_distributions=False):
+    
+    
+    return
 
 def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
                 model_wd='DA',feh='p0.00',vvcrit='0.0',

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Mar 25 11:04:01 2020
-
-@author: rociokiman
-"""
 
 import numpy as np
 from astropy.table import Table
@@ -32,11 +27,11 @@ def ifmr(initial_mass):
 def get_cooling_model(model_wd):
     
     if(model_wd == 'DA'):
-        table_model = np.loadtxt('/Users/rociokiman/Documents/wdwarfdate/Models/cooling_models/Table_DA')
+        table_model = np.loadtxt('Models/cooling_models/Table_DA')
         rows = 51
 
     if(model_wd == 'DB'):
-        table_model = np.loadtxt('/Users/rociokiman/Documents/wdwarfdate/Models/cooling_models/Table_DB')
+        table_model = np.loadtxt('Models/cooling_models/Table_DB')
         rows = 62
     
     model_T = table_model[:,0]
@@ -54,7 +49,7 @@ def get_isochrone_model(feh,vvcrit):
     Interpolates MIST isochrones to get a function that gives initial mass
     as a function of main sequence age.
     '''
-    file = '/Users/rociokiman/Documents/wdwarfdate/Models/MIST/MIST_v1.2_feh_'+feh+'_afe_p0.0_vvcrit'+vvcrit+'_EEPS_sum.csv'
+    file = 'Models/MIST/MIST_v1.2_feh_'+feh+'_afe_p0.0_vvcrit'+vvcrit+'_EEPS_sum.csv'
     table_model = Table.read(file)
     
     model_initial_mass = table_model['initial_mass']
@@ -131,7 +126,7 @@ def lnlike(params,teff,e_teff,logg,e_logg,models):
     else:
         return -0.5*(np.sum((teff-model_teff)**2/e_teff**2 + (logg-model_logg)**2/e_logg**2))
     
-def ln_poterior_prob(params,teff,e_teff,logg,e_logg,models):
+def ln_posterior_prob(params,teff,e_teff,logg,e_logg,models):
     
     ln_ms_age,ln_cooling_age = params
     ln_ms_age = np.asarray(ln_ms_age)
