@@ -1,30 +1,40 @@
 import numpy as np
+from astropy.table import Table
 from .coolingage import calc_cooling_age
 from .final2initial_mass import calc_initial_mass
 from .ms_age import calc_ms_age
 from .bayesian_age import get_cooling_model, get_isochrone_model
 from .bayesian_results import run_mcmc
-from astropy.table import Table
+from .extra_func import calc_percentiles
 
-def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=2000,
+def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
                          model_wd='DA',feh='p0.00',vvcrit='0.0',
                          model_ifmr = 'Cummings 2018',
-                         init_params = [],
+                         init_params = [], n =500, high_perc=84, low_perc=16,
                          return_distributions = False, plot = True):
     
-    cooling_models = get_cooling_model('DA')
-    ifmr_model = 'Cummings'
-    isochrone_model = get_isochrone_model(feh='p0.00',vvcrit='0.0')
+    cooling_models = get_cooling_model(model_wd)
+    isochrone_model = get_isochrone_model(feh=feh,vvcrit=vvcrit)
     
-    models0 = [ifmr_model,isochrone_model,cooling_models]
+    models0 = [model_ifmr,isochrone_model,cooling_models]
     
     flat_samples = run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=init_params, 
-                            n=500, plot=True)
+                            n=n, nsteps=n_mc, plot=plot)
     
-    like_eval = np.loadtxt('teff_{}_logg_{}_p0.00_vvcrit_0.0_DA_Cummings.txt'.format(teff0,logg0,))
+    like_eval = np.loadtxt('teff_' + str(teff0) + '_logg_' + str(logg0) + 
+                           '_feh_' + feh + '_vvcrit_' + vvcrit + '_' + 
+                           model_wd + '_' + model_ifmr + '.txt')
     
+    ln_ms_age = flat_samples[:,0]
+    ln_cooling_age = flat_samples[:,1]
+    ln_total_age = like_eval[500:,2]
+    initial_mass = like_eval[500:,3]
+    final_mass = like_eval[500:,4]
     
-    return
+    results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, 
+                               final_mass, high_perc, low_perc)
+    
+    return results
 
 def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
                 model_wd='DA',feh='p0.00',vvcrit='0.0',
