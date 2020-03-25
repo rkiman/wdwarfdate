@@ -2,13 +2,26 @@ import numpy as np
 from .coolingage import calc_cooling_age
 from .final2initial_mass import calc_initial_mass
 from .ms_age import calc_ms_age
-from .bayesian_age import ln_posterior_prob
+from .bayesian_age import get_cooling_model, get_isochrone_model
+from .bayesian_results import run_mcmc
 from astropy.table import Table
 
-def calc_bayesian_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
+def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=2000,
                          model_wd='DA',feh='p0.00',vvcrit='0.0',
                          model_ifmr = 'Cummings 2018',
-                         return_distributions=False):
+                         init_params = [],
+                         return_distributions = False, plot = True):
+    
+    cooling_models = get_cooling_model('DA')
+    ifmr_model = 'Cummings'
+    isochrone_model = get_isochrone_model(feh='p0.00',vvcrit='0.0')
+    
+    models0 = [ifmr_model,isochrone_model,cooling_models]
+    
+    flat_samples = run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=init_params, 
+                            n=500, plot=True)
+    
+    like_eval = np.loadtxt('teff_{}_logg_{}_p0.00_vvcrit_0.0_DA_Cummings.txt'.format(teff0,logg0,))
     
     
     return

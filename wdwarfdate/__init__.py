@@ -5,3 +5,4 @@ from .wdwarfdate import *
 from .make_models_fit import *
 from .bayesian_age import *
 from .bayesian_results import *
+from .extra_func import *

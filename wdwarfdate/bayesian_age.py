@@ -28,11 +28,9 @@ def get_cooling_model(model_wd):
     
     if(model_wd == 'DA'):
         table_model = np.loadtxt('Models/cooling_models/Table_DA')
-        rows = 51
 
     if(model_wd == 'DB'):
         table_model = np.loadtxt('Models/cooling_models/Table_DB')
-        rows = 62
     
     model_T = table_model[:,0]
     model_logg = table_model[:,1]
@@ -56,7 +54,7 @@ def get_isochrone_model(feh,vvcrit):
     model_ms_age = np.log10(table_model['ms_age'])
     
     f_initial_mass = interpolate.interp1d(model_ms_age,model_initial_mass, fill_value=np.nan)
-    name = feh + '_vvcrit_' + vvcrit
+    name = 'feh_' + feh + '_vvcrit_' + vvcrit
     return f_initial_mass,model_initial_mass,model_ms_age,name
 
 

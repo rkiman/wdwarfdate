@@ -151,7 +151,7 @@ def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500,
     return init_max_like
 
 def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
-             nsteps = 2000, plot=True):
+             nsteps = 1000, plot=True):
     '''
     Starting from the maximum likelihood ages (main sequence age and cooling
     age), samples the posterior to get the likelihood evaluations of the rest 
