@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import interpolate
-#import matplotlib.pyplot as plt
 
 def calc_cooling_age(teff_dist,logg_dist,n_mc,N,model,plot_fit=False):
         
@@ -38,24 +37,3 @@ def calc_cooling_age(teff_dist,logg_dist,n_mc,N,model,plot_fit=False):
         final_mass_dist.append(mass_dist_i)
             
     return np.array(cooling_age_dist),np.array(final_mass_dist)
-
-'''
-logg = 8.547815000000002 
-e_logg = 0.140948
-
-teff = 24514.469877 
-e_teff = 2083.393146
-
-n_mc = 2000
-N = 1
-
-teff_dist = np.array([np.random.normal(teff,e_teff,n_mc)])
-logg_dist = np.array([np.random.normal(logg,e_logg,n_mc)])
-
-cooling_age,final_mass = calc_cooling_age(teff_dist,logg_dist,n_mc,N,model='DA',plot_fit=False)
-
-plt.hist(np.log10(cooling_age[~np.isnan(cooling_age)]),bins=20)
-plt.axvline(x=8.10,color='r')
-plt.axvline(x=np.nanpercentile(np.log10(cooling_age[~np.isnan(cooling_age)]),50),color='k')
-plt.show()
-'''

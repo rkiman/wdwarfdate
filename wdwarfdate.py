@@ -20,9 +20,13 @@ def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
     
     teff_dist,logg_dist = [],[]
     
-    for i in range(N):    
-        teff_dist.append(np.random.normal(teff[i],e_teff[i],n_mc))
-        logg_dist.append(np.random.normal(logg[i],e_logg[i],n_mc))
+    for i in range(N):
+        if(np.isnan(teff[i]+e_teff[i]+logg[i]+e_logg[i])):
+            teff_dist.append(np.nan)
+            logg_dist.append(np.nan)
+        else:
+            teff_dist.append(np.random.normal(teff[i],e_teff[i],n_mc))
+            logg_dist.append(np.random.normal(logg[i],e_logg[i],n_mc))
     teff_dist,logg_dist = np.array(teff_dist),np.array(logg_dist)
         
     cooling_age_dist,final_mass_dist = calc_cooling_age(teff_dist,logg_dist,
@@ -34,27 +38,35 @@ def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
     
     total_age_dist = cooling_age_dist + ms_age_dist
     
+    mask = np.logical_or(np.logical_or(ms_age_dist/1e9 > 13.8,total_age_dist/1e9 > 13.8),cooling_age_dist/1e9 > 13.8)
+    
+    cooling_age_dist[mask] = np.copy(cooling_age_dist[mask])*np.nan
+    final_mass_dist[mask] = np.copy(final_mass_dist[mask])*np.nan
+    initial_mass_dist[mask] = np.copy(initial_mass_dist[mask])*np.nan
+    ms_age_dist[mask] = np.copy(ms_age_dist[mask])*np.nan
+    total_age_dist[mask] = np.copy(total_age_dist[mask])*np.nan
+    
     results = Table()
     
     results['final_mass_median'] = np.array([np.nanpercentile(x,50) for x in final_mass_dist])
-    results['final_mass_err_high'] = np.array([np.nanpercentile(x,84.1345) for x in final_mass_dist])
-    results['final_mass_err_low'] = np.array([np.nanpercentile(x,15.8655) for x in final_mass_dist])
+    results['final_mass_err_high'] = np.array([np.nanpercentile(x,84.1345)-np.nanpercentile(x,50) for x in final_mass_dist])
+    results['final_mass_err_low'] = np.array([np.nanpercentile(x,50)-np.nanpercentile(x,15.8655) for x in final_mass_dist])
     
     results['initial_mass_median'] = np.array([np.nanpercentile(x,50) for x in initial_mass_dist])
-    results['initial_mass_err_high'] = np.array([np.nanpercentile(x,84.1345) for x in initial_mass_dist])
-    results['initial_mass_err_low'] = np.array([np.nanpercentile(x,15.8655) for x in initial_mass_dist])
+    results['initial_mass_err_high'] = np.array([np.nanpercentile(x,84.1345)-np.nanpercentile(x,50) for x in initial_mass_dist])
+    results['initial_mass_err_low'] = np.array([np.nanpercentile(x,50)-np.nanpercentile(x,15.8655) for x in initial_mass_dist])
 
     results['cooling_age_median'] = np.array([np.nanpercentile(x,50) for x in cooling_age_dist])
-    results['cooling_age_err_high'] = np.array([np.nanpercentile(x,84.1345) for x in cooling_age_dist])
-    results['cooling_age_err_low'] = np.array([np.nanpercentile(x,15.8655) for x in cooling_age_dist])
+    results['cooling_age_err_high'] = np.array([np.nanpercentile(x,84.1345)-np.nanpercentile(x,50) for x in cooling_age_dist])
+    results['cooling_age_err_low'] = np.array([np.nanpercentile(x,50)-np.nanpercentile(x,15.8655) for x in cooling_age_dist])
 
     results['ms_age_median'] = np.array([np.nanpercentile(x,50) for x in ms_age_dist])
-    results['ms_age_err_high'] = np.array([np.nanpercentile(x,84.1345) for x in ms_age_dist])
-    results['ms_age_err_low'] = np.array([np.nanpercentile(x,15.8655) for x in ms_age_dist])
+    results['ms_age_err_high'] = np.array([np.nanpercentile(x,84.1345)-np.nanpercentile(x,50) for x in ms_age_dist])
+    results['ms_age_err_low'] = np.array([np.nanpercentile(x,50)-np.nanpercentile(x,15.8655) for x in ms_age_dist])
 
     results['total_age_median'] = np.array([np.nanpercentile(x,50) for x in total_age_dist])
-    results['total_age_err_high'] = np.array([np.nanpercentile(x,84.1345) for x in total_age_dist])
-    results['total_age_err_low'] = np.array([np.nanpercentile(x,15.8655) for x in total_age_dist])    
+    results['total_age_err_high'] = np.array([np.nanpercentile(x,84.1345)-np.nanpercentile(x,50) for x in total_age_dist])
+    results['total_age_err_low'] = np.array([np.nanpercentile(x,50)-np.nanpercentile(x,15.8655) for x in total_age_dist])    
     
     if(return_distributions):
         results['final_mass_dist'] = final_mass_dist
@@ -64,75 +76,60 @@ def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
         results['total_age_dist'] = total_age_dist
     return results
 
-
 '''
-wd = Table.read('/Users/rociokiman/Documents/M-dwarfs-Age-Activity-Relation/Catalogs/WD_M_Pairs_new.csv')
-
-logg = np.array([8.195693])
-e_logg = np.array([0.160218])
-
-teff = np.array([14964.260506])
-e_teff = np.array([1375.595732])
-
-results = calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
-            model_wd='DA',feh='p0.00',vvcrit='0.4',return_distributions=True)
-
-#print('Cooling Age: {}yr +/- {}yr\nMS Age: {}yr +\- {}yr\nTotal Age: {}yr +\- {}yr'.format(results['cooling_age_median'][0]/1e6,
-#      results['cooling_age_std'][0]/1e6,results['ms_age_median'][0]/1e6,results['ms_age_std'][0]/1e6,
-#      results['total_age_median'][0]/1e6,results['total_age_std'][0]/1e6))
-
-plt.hist(results['final_mass_dist'][0],bins=20)
-plt.axvline(x=results['final_mass_median'][0],color='k',linestyle='--')
-plt.axvline(x=results['final_mass_err_high'][0],color='k',linestyle='--')
-plt.axvline(x=results['final_mass_err_low'][0],color='k',linestyle='--')
-#plt.axvline(x=650,color='k')
-plt.show()
-
-plt.hist(results['initial_mass_dist'][0],bins=20)
-plt.axvline(x=results['initial_mass_median'][0],color='k',linestyle='--')
-plt.axvline(x=results['initial_mass_err_high'][0],color='k',linestyle='--')
-plt.axvline(x=results['initial_mass_err_low'][0],color='k',linestyle='--')
-#plt.axvline(x=650,color='k')
-plt.show()
-
-plt.hist(results['ms_age_dist'][0]/1e6,bins=np.linspace(0,2000,30))
-plt.axvline(x=results['ms_age_median'][0]/1e6,color='k',linestyle='--')
-plt.axvline(x=results['ms_age_err_high'][0]/1e6,color='k',linestyle='--')
-plt.axvline(x=results['ms_age_err_low'][0]/1e6,color='k',linestyle='--')
-#plt.axvline(x=650,color='k')
-plt.show()
-
-plt.hist(results['total_age_dist'][0]/1e6,bins=np.linspace(0,2000,30))
-plt.axvline(x=results['total_age_median'][0]/1e6,color='k',linestyle='--')
-plt.axvline(x=results['total_age_err_high'][0]/1e6,color='k',linestyle='--')
-plt.axvline(x=results['total_age_err_low'][0]/1e6,color='k',linestyle='--')
-plt.axvline(x=650,color='k')
-plt.show()
-
-
-n_mc = 2000
-
-plt.plot(final_mass,final_mass_median,'.')
-plt.xlabel('Final Mass')
-plt.show()
-
-plt.plot(initial_mass_median,final_mass,'.')
-plt.xlabel('initial mass')
-plt.ylabel('final mass')
-plt.show()
-
-plt.plot(wd['WD_CoolingAge (yr)'],cooling_age_median,'.')
-plt.xlabel('Cooling Age')
-plt.show()
-
-x = np.linspace(10**8,10**10,10)
-plt.loglog(wd['MS_Age (yr)'],ms_age_median,'.')
-plt.loglog(x,x,'-k')
-plt.xlabel('MS Age')
-plt.show()
-
-plt.loglog(wd['Total_Age(yr)'],total_age_median,'.')
-plt.loglog(x,x,'-k')
-plt.xlabel('Total Age')
-plt.show()
+def plot_comparison(results,final_mass_compare,intial_mass_compare,cooling_age_compare,
+                    ms_age_compare,total_age_compare,scale_age):
+    result_total_age
+    result_total_age_err_low
+    result_total_age_err_high
+    color_line = 'k'
+    lw = .5
+    f,((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(8,6))
+    
+    ax1.errorbar(total_age_compare,result_total_age,
+                 xerr=(garces2011['e_Age_lo'],garces2011['e_Age_hi']),
+                 yerr=(result_garces2011['total_age_err_low']/1e9,result_garces2011['total_age_err_high']/1e9), fmt='.')
+    x = np.linspace(0,10)
+    ax1.plot(x,x,'-',color=color_line,linewidth=lw)
+    ax1.set_xlabel('Total Age')
+    ax1.tick_params('both',direction='in',top=True,right=True)
+    ax1.tick_params('y',which='minor',direction='in',right=True)
+    
+    
+    ax2.errorbar(garces2011['Minitial_mass'],result_garces2011['initial_mass_median'],
+                 xerr=garces2011['e_initial_mass'],
+                 yerr=(result_garces2011['initial_mass_err_low'],result_garces2011['initial_mass_err_high']),
+                 fmt='.')
+    x = np.linspace(0.5,4)
+    ax2.plot(x,x,'-',color=color_line,linewidth=lw)
+    ax2.set_xlabel('Initial Mass')
+    ax2.tick_params('both',direction='in',top=True,right=True)
+    ax2.tick_params('y',which='minor',direction='in',right=True)
+    
+    ax3.errorbar(garces2011['tcool'],result_garces2011['cooling_age_median']/1e9,
+                 xerr=garces2011['e_tcool'],
+                 yerr=(result_garces2011['cooling_age_err_low']/1e9,result_garces2011['cooling_age_err_high']/1e9), fmt='.')
+    x = np.linspace(0,6)
+    ax3.plot(x,x,'-',color=color_line,linewidth=lw)
+    ax3.set_xlabel('Cooling Age')
+    ax3.tick_params('both',direction='in',top=True,right=True)
+    ax3.tick_params('y',which='minor',direction='in',right=True)
+    
+    ax4.errorbar(garces2011['ms_age'],result_garces2011['ms_age_median']/1e9,
+                 xerr=(garces2011['e_ms_age_lo'],garces2011['e_ms_age_hi']),
+                 yerr=(result_garces2011['ms_age_err_low']/1e9,result_garces2011['ms_age_err_high']/1e9),fmt='.')
+    x = np.linspace(0,4)
+    ax4.plot(x,x,'-',color=color_line,linewidth=lw)
+    ax4.set_xlabel('MS Age')
+    ax4.tick_params('both',direction='in',top=True,right=True)
+    ax4.tick_params('y',which='minor',direction='in',right=True)
+    
+    f.text(0.5, 0.01, 'Garces 2011 ', ha='center')
+    f.text(0.00, 0.5, 'This work', va='center', rotation='vertical')
+    
+    plt.tight_layout()
+    plt.show()
+    
+#def plot_distributions(i,results,final_mass_compare,intial_mass_compare,cooling_age_compare,
+#                       ms_age_compare,total_age_compare,xscale='log'):
 '''
