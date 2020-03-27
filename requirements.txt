@@ -1,7 +1,6 @@
 
 numpy
 astropy
-os
 matplotlib
 emcee
 corner
