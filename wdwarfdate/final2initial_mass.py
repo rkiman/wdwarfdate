@@ -8,7 +8,7 @@ def calc_initial_mass(model_ifmr,final_mass_dist,n_mc):
     '''        
     initial_mass_dist = []
     
-    if(model_ifmr == 'Cummings 2018'):
+    if(model_ifmr == 'Cummings_2018'):
         '''
         Uses initial-final mass relation from Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         to calculte progenitor's mass from the white dwarf mass.
@@ -26,7 +26,7 @@ def calc_initial_mass(model_ifmr,final_mass_dist,n_mc):
                     0
             
             initial_mass_dist.append(initial_mass_dist_i)
-    elif(model_ifmr == 'Salaris 2009'):
+    elif(model_ifmr == 'Salaris_2009'):
         '''
         Uses initial-final mass relation from Salaris, M., et al., Astrophys. J. 692, 1013–1032 (2009)
         to calculte progenitor's mass from the white dwarf mass.
@@ -43,7 +43,7 @@ def calc_initial_mass(model_ifmr,final_mass_dist,n_mc):
                     0
             
             initial_mass_dist.append(initial_mass_dist_i)
-    elif(model_ifmr == 'Williams 2009'):
+    elif(model_ifmr == 'Williams_2009'):
         '''
         Uses initial-final mass relation from Williams, K. A., et al., Astrophys. J. 693, 355–369 (2009).
         to calculte progenitor's mass from the white dwarf mass.

@@ -1,45 +1,86 @@
 import numpy as np
 from astropy.table import Table
+import os
 from .coolingage import calc_cooling_age
 from .final2initial_mass import calc_initial_mass
 from .ms_age import calc_ms_age
 from .bayesian_age import get_cooling_model, get_isochrone_model
 from .bayesian_results import run_mcmc
-from .extra_func import calc_percentiles
+from .extra_func import calc_percentiles, plot_distributions
 
 def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
                          model_wd='DA',feh='p0.00',vvcrit='0.0',
-                         model_ifmr = 'Cummings 2018',
-                         init_params = [], n =500, high_perc=84, low_perc=16,
-                         return_distributions = False, plot = True):
+                         model_ifmr = 'Cummings_2018_MIST',
+                         init_params = [], comparison = [], n = 500, 
+                         high_perc = 84, low_perc = 16,
+                         plot = True):
+    '''
+    Calculates percentiles for main sequence age, cooling age, total age, 
+    final mass and initial mass of a white dwarf with teff0 and logg0. Works for
+    one white dwarf at a time. 
     
+    comparison: list of results from another paper:
+    [log10(ms age (yr)),log10(cooling age (yr)), log10(totla age (yr)), 
+    initial mass, final mass]
+    '''
+    
+    #Set the name to identify the results from each white dwarf
+    teff_logg_name = 'results/teff_' + str(teff0) + '_logg_' + str(logg0)
+    models_name =  '_feh_' + feh + '_vvcrit_' + vvcrit + '_' + model_wd + '_' + model_ifmr
+    file_like_eval =  teff_logg_name + models_name + '.txt'
+    fig_name = teff_logg_name + models_name
+    
+    #Interpolates models for cooling age and main sequence age
     cooling_models = get_cooling_model(model_wd)
     isochrone_model = get_isochrone_model(feh=feh,vvcrit=vvcrit)
     
-    models0 = [model_ifmr,isochrone_model,cooling_models]
+    models0 = [model_ifmr,isochrone_model,cooling_models,fig_name]
     
-    flat_samples = run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=init_params, 
-                            n=n, nsteps=n_mc, plot=plot)
+    #If it doesn't exist, creates a folder to save the plots
+    if not os.path.exists('results'):
+        os.makedirs('results')
+       
+    #Check if file exists and remove if it does so if can be filled again
+    if os.path.exists(file_like_eval):
+        os.remove(file_like_eval)
+        
+    #Run emcee to obtain likelihood evaluations of ms age, cooling age, total age,
+    #final mass and initial mass
+    flat_samples = run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, 
+                            init_params=init_params, 
+                            n=n, nsteps=n_mc, plot=plot, 
+                            figname = fig_name, comparison=comparison)
+
+    #Open file where the likelihood evaluations where saved
+    like_eval = np.loadtxt(file_like_eval)
     
-    like_eval = np.loadtxt('teff_' + str(teff0) + '_logg_' + str(logg0) + 
-                           '_feh_' + feh + '_vvcrit_' + vvcrit + '_' + 
-                           model_wd + '_' + model_ifmr + '.txt')
-    
+    #Use the likelihood evaluations for the dependent parameters 
+    #and the posterior for the independen parameters
     ln_ms_age = flat_samples[:,0]
     ln_cooling_age = flat_samples[:,1]
     ln_total_age = like_eval[500:,2]
     initial_mass = like_eval[500:,3]
     final_mass = like_eval[500:,4]
     
+    #Calculate percentiles for ms age, cooling age, total age, initial mass and final mass
     results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, 
-                               final_mass, high_perc, low_perc)
+                               final_mass, high_perc, low_perc, datatype='Gyr')
+    
+    plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age, 
+                       initial_mass, final_mass, high_perc, low_perc, 
+                       comparison = comparison, name = teff_logg_name + models_name)
     
     return results
 
 def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
                 model_wd='DA',feh='p0.00',vvcrit='0.0',
-                model_ifmr = 'Cummings 2018',
+                model_ifmr = 'Cummings_2018',
                 return_distributions=False):
+    '''
+    Calculated white dwarfs ages with a frequentist approch. Starts from normal 
+    dristribution of teff and logg based on the errors and passes the full
+    distribution through the same process to get a distribution of ages.
+    '''
     
     if(not isinstance(teff,np.ndarray)):
         teff = np.array([teff])

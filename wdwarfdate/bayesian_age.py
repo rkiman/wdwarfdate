@@ -5,7 +5,7 @@ import numpy as np
 from astropy.table import Table
 from scipy import interpolate
 
-def ifmr(initial_mass):
+def ifmr(initial_mass,ifmr_model):
     '''
     Define Initial-Final Mass relation
     '''
@@ -14,13 +14,24 @@ def ifmr(initial_mass):
     final_mass = np.copy(initial_mass)*np.nan
     final_mass = np.asarray(final_mass)
     
-    #Initial-Final mass relation from Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
-    mask1 = (0.83 <= initial_mass) * (initial_mass < 2.85)
-    mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
-    mask3 = (3.60 <= initial_mass) * (initial_mass < 7.20)
-    final_mass[mask1] = initial_mass[mask1] * 0.08 + 0.489
-    final_mass[mask2] = initial_mass[mask2] * 0.187 + 0.184
-    final_mass[mask3] = initial_mass[mask3] * 0.107 + 0.471
+    if(ifmr_model == 'Cummings_2018_MIST'):
+        #Initial-Final mass relation from Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
+        #based on MIST isochrones
+        mask1 = (0.83 <= initial_mass) * (initial_mass < 2.85)
+        mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
+        mask3 = (3.60 <= initial_mass) * (initial_mass < 7.20)
+        final_mass[mask1] = initial_mass[mask1] * 0.08 + 0.489
+        final_mass[mask2] = initial_mass[mask2] * 0.187 + 0.184
+        final_mass[mask3] = initial_mass[mask3] * 0.107 + 0.471
+    elif(ifmr_model == 'Cummings_2018_PARSEC'):
+        #Initial-Final mass relation from Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
+        #based on PARSEC isochrones
+        mask1 = (0.87 <= initial_mass) * (initial_mass < 2.8)
+        mask2 = (2.8 <= initial_mass) * (initial_mass < 3.65)
+        mask3 = (3.65 <= initial_mass) * (initial_mass < 8.20)
+        final_mass[mask1] = initial_mass[mask1] * 0.0873 + 0.476
+        final_mass[mask2] = initial_mass[mask2] * 0.181 + 0.210
+        final_mass[mask3] = initial_mass[mask3] * 0.0835 + 0.565
     
     return final_mass
 
@@ -40,7 +51,7 @@ def get_cooling_model(model_wd):
     f_teff = interpolate.LinearNDInterpolator((model_mass,model_age),model_T, fill_value=np.nan)
     f_logg = interpolate.LinearNDInterpolator((model_mass,model_age),model_logg, fill_value=np.nan)
 
-    return f_teff,f_logg,model_age,model_mass,model_wd
+    return f_teff,f_logg,model_age,model_mass
 
 def get_isochrone_model(feh,vvcrit):
     '''
@@ -54,23 +65,21 @@ def get_isochrone_model(feh,vvcrit):
     model_ms_age = np.log10(table_model['ms_age'])
     
     f_initial_mass = interpolate.interp1d(model_ms_age,model_initial_mass, fill_value=np.nan)
-    name = 'feh_' + feh + '_vvcrit_' + vvcrit
-    return f_initial_mass,model_initial_mass,model_ms_age,name
+    
+    return f_initial_mass,model_initial_mass,model_ms_age
 
 
-def model_teff_logg(params,models,name_file):
+def model_teff_logg(params,models):
     '''
     Obtains teff and logg from main sequence age and cooling age
     '''
     #Define models to use
-    ifmr_model,isochrone_model,cooling_models = models
-    f_teff,f_logg,cooling_age_model,final_mass_model,model_wd = cooling_models
-    f_initial_mass,model_initial_mass,ms_age_model,model_name = isochrone_model
+    ifmr_model,isochrone_model,cooling_models,fig_name = models
+    f_teff,f_logg,cooling_age_model,final_mass_model = cooling_models
+    f_initial_mass,model_initial_mass,ms_age_model = isochrone_model
     
     #Parameters
     ln_ms_age,ln_cooling_age = params
-    
-    #print('cooling age: {}'.format(10**ln_cooling_age))
     
     #Sum of main sequence age and cooling age is the total age
     ln_total_age = np.log10(10**ln_cooling_age + 10**ln_ms_age)
@@ -84,15 +93,15 @@ def model_teff_logg(params,models,name_file):
         return 1.,1.
     initial_mass = f_initial_mass(ln_ms_age)
     
-    #print('initial_mass: {}'.format(initial_mass))
-    
     #Get the final mass from the initial-final mass relation
     #Return -inf if initial_mass values are not included in the model
-    if(initial_mass >= 7.20 or initial_mass < 0.83):
-        return 1.,1.
-    final_mass = ifmr(initial_mass)
-    
-    #print('final_mass: {}'.format(final_mass))
+    if(ifmr_model == 'Cummings_2018_MIST'):
+        if(initial_mass >= 7.20 or initial_mass < 0.83):
+            return 1.,1.
+    elif(ifmr_model == 'Cummings_2018_PARSEC'):
+        if(initial_mass >= 8.20 or initial_mass < 0.87):
+            return 1.,1.
+    final_mass = ifmr(initial_mass,ifmr_model)
     
     #Return -inf if the final_mass or the cooling age are not in the limits of the model
     if(np.logical_or(np.nanmin(final_mass_model) > final_mass,np.nanmax(final_mass_model) < final_mass)):
@@ -102,7 +111,6 @@ def model_teff_logg(params,models,name_file):
     
     #Get the teff and logg using evolutionary tracs from final mass and cooling age
     teff_model,logg_model = f_teff(final_mass,ln_cooling_age),f_logg(final_mass,ln_cooling_age)
-    #print('model_teff:{} model_logg:{}'.format(teff_model,logg_model))
     
     #If both values are nan means that the model doesn't include that value of final_mass and
     #cooling age. So we do not take into account that point.
@@ -110,15 +118,16 @@ def model_teff_logg(params,models,name_file):
         return 1.,1.
     
     #Saving the likelihoods evaluations
-    save_likelihoods_file = name_file + '_' + model_name + '_' + model_wd + '_' + ifmr_model +'.txt'
+    save_likelihoods_file = fig_name +'.txt'
     save_likelihoods = open(save_likelihoods_file,'a')
     save_likelihoods.write(str(ln_ms_age) + '\t' + str(ln_cooling_age) + '\t' + str(ln_total_age) + '\t' + 
                            str(initial_mass) + '\t' + str(final_mass) + '\n')
     return teff_model,logg_model
 
 def lnlike(params,teff,e_teff,logg,e_logg,models):
-    name_file = 'teff_{}_logg_{}'.format(teff,logg)
-    model_teff,model_logg = model_teff_logg(params,models,name_file)
+
+    model_teff,model_logg = model_teff_logg(params,models)
+    
     if(model_teff == 1. and model_logg==1.):
         return -np.inf
     else:
@@ -146,8 +155,7 @@ def ln_prior(params,teff,e_teff,logg,e_logg,models):
     elif(np.any((10**ln_cooling_age)/1e9>13.8)):
         return -np.inf
     else:
-        name_file = 'teff_{}_logg_{}'.format(teff,logg)
-        model_teff,model_logg = model_teff_logg(params,models,name_file)
+        model_teff,model_logg = model_teff_logg(params,models)
         if(model_teff == 1. and model_logg==1.):
             return -np.inf
         else:

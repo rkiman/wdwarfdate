@@ -4,6 +4,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import emcee
+import corner
 from .bayesian_age import ln_posterior_prob, ln_prior
 
 def kl_divergence(p, q):
@@ -94,7 +95,7 @@ def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
     return axis, post_list, post_ms_age, post_cooling_age, init_max_like
 
 def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500, 
-                         truths = []):
+                         comparison = [], figname = 'run'):
     '''
     Makes plots with the distributions of the prior and posterior for the
     main sequence age and the cooling age (the two independent parameters in
@@ -111,22 +112,24 @@ def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500,
     
     #Plot parameter space for prior
     f,((ax3,ax4),(ax1,ax2)) = plt.subplots(2,2,figsize=(10,7))
-    ax3.scatter(x_prior,y_prior,c=np.exp(prior_list),s=5,cmap='Greys')
-    if(len(truths)!=0):
-        ax3.axvline(x=truths[0])
-        ax3.axhline(y=truths[1])
+    ax3.scatter(x_prior,y_prior,c=np.exp(prior_list),s=5,cmap='Greys',label='Prior')
+    if(len(comparison)!=0):
+        ax3.axvline(x=comparison[0])
+        ax3.axhline(y=comparison[1])
     ax3.set_xlabel(r'$\log_{10}($MS Age$/yr)$')
     ax3.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
+    ax3.legend()
     
     #Plot parameter space for posterior
-    ax4.scatter(x_post,y_post,c=np.exp(post_list),s=5,cmap='Greys')
-    if(len(truths)!=0):
-        ax4.axvline(x=truths[0])
-        ax4.axhline(y=truths[1])
+    ax4.scatter(x_post,y_post,c=np.exp(post_list),s=5,cmap='Greys',label='Posterior')
+    if(len(comparison)!=0):
+        ax4.axvline(x=comparison[0])
+        ax4.axhline(y=comparison[1])
     ax4.set_xlim(np.nanmin(x_post[np.exp(post_list)!=0])-0.1,np.nanmax(x_post[np.exp(post_list)!=0])+0.1)
     ax4.set_ylim(np.nanmin(y_post[np.exp(post_list)!=0])-0.1,np.nanmax(y_post[np.exp(post_list)!=0])+0.1)
     ax4.set_xlabel(r'$\log_{10}($MS Age$/yr)$')
     ax4.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
+    ax4.legend()
     
     #Plot distribution of prior and posterior for main sequence age
     ax1.plot(x0_prior,prior_ms_age,label='Prior')
@@ -144,14 +147,14 @@ def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500,
         ax2.legend(title='KL(Post||Prior) = {0:.2f}'.format(kl_divergence(post_cooling_age, prior_cooling_age)))
     ax2.set_xlabel(r'$\log_{10}($Cooling Age$/yr)$')
     plt.tight_layout()
-    plt.savefig('post_prior_dist_teff_{0:.0f}_logg_{1:.2f}.png'.format(teff0,logg0))
-    plt.show()
+    plt.savefig(figname + '_post_prior_dist.png',dpi=300)
+    plt.close(f)
     
     #Return the maximum likelihood [ms age,cooling age]
     return init_max_like
 
 def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
-             nsteps = 1000, plot=True):
+             nsteps = 1000, plot=True, figname = 'run_', comparison=[]):
     '''
     Starting from the maximum likelihood ages (main sequence age and cooling
     age), samples the posterior to get the likelihood evaluations of the rest 
@@ -165,11 +168,12 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
     #If plot is True it will output the plot to check results
     if(len(init_params)==0 and plot==False):
         _,_,_,_,init_max_like = get_post_dist(teff0, e_teff0, logg0, e_logg0, 
-                                              models0, n)
+                                              models0, n=n)
         init_params = init_max_like
     elif(len(init_params)==0 and plot==True):
         init_max_like = plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0,
-                                             models0, n)
+                                             models0, n=n , comparison=comparison, 
+                                             figname=figname)
         init_params = init_max_like    
         
     #Initialize walkers    
@@ -184,5 +188,27 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
     #Obtain chain of samples
     chain = sampler.chain[:,500:,:]
     flat_samples = chain.reshape((-1,ndim))
+    
+    if(plot == True):
+        f,(ax1,ax2) = plt.subplots(1,2,figsize=(8,3))
+        for i in range(50):
+            ax1.plot(chain[i,:,0],color='k',alpha=0.05)
+            ax1.axhline(y=np.median(flat_samples[:,0]),color='k')
+        ax1.set_ylabel(r'$\log_{10}($MS Age$/yr)$')
+        
+        for i in range(50):
+            ax2.plot(chain[i,:,1],color='k',alpha=0.05)
+            ax2.axhline(y=np.median(flat_samples[:,1]),color='k')
+        ax2.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
+        plt.tight_layout()
+        plt.savefig(figname + '_walkers.png')
+        plt.close(f)
+        
+        labels = [r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$']
+        
+        fig = corner.corner(flat_samples, labels=labels, quantiles=[.16,.50,.84], 
+                            show_titles=True, title_kwargs={"fontsize": 12})
+        fig.savefig(figname + '_corner_plot.png',dpi=300)
+        plt.close(fig)
     
     return flat_samples
