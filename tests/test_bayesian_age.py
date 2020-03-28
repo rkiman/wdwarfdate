@@ -13,10 +13,12 @@ def test_ln_posterior_prob():
     e_logg0 = 0.2
     
     cooling_models = get_cooling_model('DA')
-    ifmr_model = 'Cummings'
+    ifmr_model = 'Cummings_2018_MIST'
     isochrone_model = get_isochrone_model(feh='p0.00',vvcrit='0.0')
     
-    models0 = [ifmr_model,isochrone_model,cooling_models]
+    fig_name = 'test_' 
+    
+    models0 = [ifmr_model,isochrone_model,cooling_models,fig_name]
     params = ln_ms_age0,ln_cooling_age0
     params_off = 8.,ln_cooling_age0
     
