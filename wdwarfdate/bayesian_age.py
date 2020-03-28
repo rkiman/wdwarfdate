@@ -74,7 +74,7 @@ def model_teff_logg(params,models):
     Obtains teff and logg from main sequence age and cooling age
     '''
     #Define models to use
-    ifmr_model,isochrone_model,cooling_models,fig_name = models
+    ifmr_model,isochrone_model,cooling_models,fig_name,dist_file_name = models
     f_teff,f_logg,cooling_age_model,final_mass_model = cooling_models
     f_initial_mass,model_initial_mass,ms_age_model = isochrone_model
     
@@ -118,10 +118,11 @@ def model_teff_logg(params,models):
         return 1.,1.
     
     #Saving the likelihoods evaluations
-    save_likelihoods_file = fig_name +'.txt'
-    save_likelihoods = open(save_likelihoods_file,'a')
-    save_likelihoods.write(str(ln_ms_age) + '\t' + str(ln_cooling_age) + '\t' + str(ln_total_age) + '\t' + 
-                           str(initial_mass) + '\t' + str(final_mass) + '\n')
+    if(dist_file_name != 'None'):
+        save_likelihoods_file = dist_file_name +'.txt'
+        save_likelihoods = open(save_likelihoods_file,'a')
+        save_likelihoods.write(str(ln_ms_age) + '\t' + str(ln_cooling_age) + '\t' + str(ln_total_age) + '\t' + 
+                               str(initial_mass) + '\t' + str(final_mass) + '\n')
     return teff_model,logg_model
 
 def lnlike(params,teff,e_teff,logg,e_logg,models):

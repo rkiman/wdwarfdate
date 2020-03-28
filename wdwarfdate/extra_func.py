@@ -70,6 +70,7 @@ def plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age,
     if(len(comparison) != 0):
         ax1.axvline(x=comparison[0],color='r')
     ax1.set_xlabel(r'$\log _{10}($MS Age$/yr)$')
+    #ax1.set_title(r'{}^{+}')
     
     ax2.hist(ln_cooling_age,bins=20)
     ax2.axvline(x=results[3],color='k')

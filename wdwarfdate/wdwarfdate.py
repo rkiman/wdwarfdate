@@ -13,7 +13,7 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
                          model_ifmr = 'Cummings_2018_MIST',
                          init_params = [], comparison = [], n = 500, 
                          high_perc = 84, low_perc = 16,
-                         plot = True):
+                         plot = True, save_dist = True):
     '''
     Calculates percentiles for main sequence age, cooling age, total age, 
     final mass and initial mass of a white dwarf with teff0 and logg0. Works for
@@ -30,11 +30,17 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
     file_like_eval =  teff_logg_name + models_name + '.txt'
     fig_name = teff_logg_name + models_name
     
+    if(save_dist == True):
+        dist_file_name = teff_logg_name + models_name
+    elif(save_dist == False):
+        dist_file_name = 'None'
+    
     #Interpolates models for cooling age and main sequence age
     cooling_models = get_cooling_model(model_wd)
     isochrone_model = get_isochrone_model(feh=feh,vvcrit=vvcrit)
     
-    models0 = [model_ifmr,isochrone_model,cooling_models,fig_name]
+    models0 = [model_ifmr,isochrone_model,cooling_models,fig_name,
+               dist_file_name]
     
     #If it doesn't exist, creates a folder to save the plots
     if not os.path.exists('results'):
@@ -47,29 +53,32 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
     #Run emcee to obtain likelihood evaluations of ms age, cooling age, total age,
     #final mass and initial mass
     flat_samples = run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, 
-                            init_params=init_params, 
+                            init_params = init_params, 
                             n=n, nsteps=n_mc, plot=plot, 
                             figname = fig_name, comparison=comparison)
 
-    #Open file where the likelihood evaluations where saved
-    like_eval = np.loadtxt(file_like_eval)
-    
-    #Use the likelihood evaluations for the dependent parameters 
-    #and the posterior for the independen parameters
-    ln_ms_age = flat_samples[:,0]
-    ln_cooling_age = flat_samples[:,1]
-    ln_total_age = like_eval[500:,2]
-    initial_mass = like_eval[500:,3]
-    final_mass = like_eval[500:,4]
-    
-    #Calculate percentiles for ms age, cooling age, total age, initial mass and final mass
-    results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, 
-                               final_mass, high_perc, low_perc, datatype='Gyr')
-    
-    plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age, 
-                       initial_mass, final_mass, high_perc, low_perc, 
-                       comparison = comparison, name = teff_logg_name + models_name)
-    
+    if(save_dist == True):
+        #Open file where the likelihood evaluations where saved
+        like_eval = np.loadtxt(file_like_eval)
+        
+        #Use the likelihood evaluations for the dependent parameters 
+        #and the posterior for the independen parameters
+        ln_ms_age = flat_samples[:,0]
+        ln_cooling_age = flat_samples[:,1]
+        ln_total_age = like_eval[500:,2]
+        initial_mass = like_eval[500:,3]
+        final_mass = like_eval[500:,4]
+        
+        #Calculate percentiles for ms age, cooling age, total age, initial mass and final mass
+        results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, 
+                                   final_mass, high_perc, low_perc, datatype='Gyr')
+        
+        plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age, 
+                           initial_mass, final_mass, high_perc, low_perc, 
+                           comparison = comparison, name = teff_logg_name + models_name)
+    else:
+        results = []
+        
     return results
 
 def calc_wd_age(teff,e_teff,logg,e_logg,n_mc=2000,
