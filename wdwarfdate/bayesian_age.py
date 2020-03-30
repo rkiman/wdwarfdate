@@ -32,7 +32,12 @@ def ifmr(initial_mass,ifmr_model):
         final_mass[mask1] = initial_mass[mask1] * 0.0873 + 0.476
         final_mass[mask2] = initial_mass[mask2] * 0.181 + 0.210
         final_mass[mask3] = initial_mass[mask3] * 0.0835 + 0.565
-    
+    elif(ifmr_model == 'Salaris_2009'):
+        #Initial-Final mass relation from Salaris, M., et al., Astrophys. J. 692, 1013–1032 (2009).
+        mask1 = (1.7 <= initial_mass) * (initial_mass < 4)
+        mask2 = (4 <= initial_mass) 
+        final_mass[mask1] = initial_mass[mask1] * 0.134 + 0.331
+        final_mass[mask2] = initial_mass[mask2] * 0.047 + 0.679   
     return final_mass
 
 def get_cooling_model(model_wd):
@@ -101,6 +106,10 @@ def model_teff_logg(params,models):
     elif(ifmr_model == 'Cummings_2018_PARSEC'):
         if(initial_mass >= 8.20 or initial_mass < 0.87):
             return 1.,1.
+    elif(ifmr_model == 'Salaris_2009'):
+        if(initial_mass < 1.7):
+            return 1.,1.
+        
     final_mass = ifmr(initial_mass,ifmr_model)
     
     #Return -inf if the final_mass or the cooling age are not in the limits of the model
