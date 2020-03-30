@@ -8,7 +8,8 @@ import corner
 from .bayesian_age import ln_posterior_prob, ln_prior
 
 def kl_divergence(p, q):
-    return np.sum(np.where(p != 0, p * np.log(p / q), 0))
+    mask = (q != 0.0) * (p != 0.0)
+    return np.sum(p[mask] * np.log(p[mask] / q[mask]))
 
 def get_prior_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
     '''
