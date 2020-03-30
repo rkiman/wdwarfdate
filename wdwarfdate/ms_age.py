@@ -28,7 +28,12 @@ def calc_ms_age(initial_mass_dist,feh,vvcrit):
     ms_age_dist = np.array(ms_age_dist)
     
     #Replace with nan all the values of ms_age bigger than the age of the Universe
-    mask = (ms_age_dist[~np.isnan(ms_age_dist)]/1e9 > 13.8) 
-    ms_age_dist[~np.isnan(ms_age_dist)][mask] = np.nan
+    mask_nan = np.isnan(ms_age_dist)
+    ms_age_dist[mask_nan] = -1
+    
+    mask = ms_age_dist/1e9 > 13.8
+    ms_age_dist[mask] = np.nan
+    
+    ms_age_dist[mask_nan] = np.nan
     
     return np.array(ms_age_dist)
