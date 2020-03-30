@@ -61,7 +61,7 @@ def plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age,
     
     results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, 
                                final_mass, high_perc, low_perc, datatype='log')
-    
+    title = r"${{{0:.2f}}}_{{-{1:.2f}}}^{{+{2:.2f}}}$"
     f, (ax1,ax2,ax3,ax4,ax5) = plt.subplots(1,5, figsize=(12,3))
     ax1.hist(ln_ms_age,bins=20)
     ax1.axvline(x=results[0],color='k')
@@ -70,7 +70,7 @@ def plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age,
     if(len(comparison) != 0):
         ax1.axvline(x=comparison[0],color='r')
     ax1.set_xlabel(r'$\log _{10}($MS Age$/yr)$')
-    #ax1.set_title(r'{}^{+}')
+    ax1.title(title.format(results[0],results[1],results[2]))
     
     ax2.hist(ln_cooling_age,bins=20)
     ax2.axvline(x=results[3],color='k')
@@ -79,6 +79,7 @@ def plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age,
     if(len(comparison) != 0):
         ax2.axvline(x=comparison[1],color='r')
     ax2.set_xlabel(r'$\log _{10}($Cooling Age$/yr)$')
+    ax2.title(title.format(results[3],results[4],results[5]))
     
     ax3.hist(ln_total_age,bins=20)
     ax3.axvline(x=results[6],color='k')
@@ -87,6 +88,7 @@ def plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age,
     if(len(comparison) != 0):
         ax3.axvline(x=comparison[2],color='r')
     ax3.set_xlabel(r'$\log _{10}($Total$/yr)$')
+    ax3.title(title.format(results[6],results[7],results[8]))
     
     ax4.hist(initial_mass,bins=20)
     ax4.axvline(x=results[9],color='k')
@@ -95,6 +97,7 @@ def plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age,
     if(len(comparison) != 0):
         ax4.axvline(x=comparison[3],color='r')
     ax4.set_xlabel('Initial Mass')
+    ax4.title(title.format(results[9],results[10],results[11]))
     
     ax5.hist(final_mass,bins=20)
     ax5.axvline(x=results[12],color='k')
@@ -103,6 +106,7 @@ def plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age,
     if(len(comparison) != 0):
         ax5.axvline(x=comparison[4],color='r')
     ax5.set_xlabel('Final Mass')
+    ax5.title(title.format(results[12],results[13],results[14]))
     
     plt.tight_layout()
     plt.savefig(name + '_distributions.png',dpi=300)
