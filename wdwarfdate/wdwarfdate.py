@@ -5,7 +5,7 @@ from .coolingage import calc_cooling_age
 from .final2initial_mass import calc_initial_mass
 from .ms_age import calc_ms_age
 from .bayesian_age import get_cooling_model, get_isochrone_model
-from .bayesian_results import run_mcmc
+from .bayesian_run_mcmc import run_mcmc
 from .extra_func import calc_percentiles, plot_distributions
 
 def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
