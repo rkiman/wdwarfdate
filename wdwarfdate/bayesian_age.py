@@ -89,8 +89,8 @@ def model_teff_logg(params,models):
     #Sum of main sequence age and cooling age is the total age
     ln_total_age = np.log10(10**ln_cooling_age + 10**ln_ms_age)
     
-    if((10**ln_total_age)/1e9 >= 13.8):
-        return 1.,1.
+    #if((10**ln_total_age)/1e9 >= 13.8):
+    #    return 1.,1.
     
     #Get the initial mass from the main sequence age using isochrones
     #Return -inf if ms_age values that are not included in the model
@@ -148,26 +148,27 @@ def ln_posterior_prob(params,teff,e_teff,logg,e_logg,models):
     ln_ms_age,ln_cooling_age = params
     ln_ms_age = np.asarray(ln_ms_age)
     
-    if(np.any((10**ln_ms_age)/1e9>13.8)):
-        return -np.inf
-    elif(np.any((10**ln_cooling_age)/1e9>13.8)):
-        return -np.inf
-    else:
-        return lnlike(params,teff,e_teff,logg,e_logg,models) 
+    #if(np.any((10**ln_ms_age)/1e9>13.8)):
+    #    return -np.inf
+    #elif(np.any((10**ln_cooling_age)/1e9>13.8)):
+    #    return -np.inf
+    #else:
+    return lnlike(params,teff,e_teff,logg,e_logg,models) 
     
     
 def ln_prior(params,teff,e_teff,logg,e_logg,models):
     ln_ms_age,ln_cooling_age = params
     ln_ms_age = np.asarray(ln_ms_age)
     
-    if(np.any((10**ln_ms_age)/1e9>13.8)):
-        return -np.inf
-    elif(np.any((10**ln_cooling_age)/1e9>13.8)):
+    #if(np.any((10**ln_ms_age)/1e9>13.8)):
+    #    return -np.inf
+    #elif(np.any((10**ln_cooling_age)/1e9>13.8)):
+    #    return -np.inf
+    #else:
+    
+    model_teff,model_logg = model_teff_logg(params,models)
+    if(model_teff == 1. and model_logg==1.):
         return -np.inf
     else:
-        model_teff,model_logg = model_teff_logg(params,models)
-        if(model_teff == 1. and model_logg==1.):
-            return -np.inf
-        else:
-            return 0
+        return 0
     

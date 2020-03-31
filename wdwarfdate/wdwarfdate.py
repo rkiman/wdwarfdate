@@ -13,7 +13,7 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
                          model_ifmr = 'Cummings_2018_MIST',
                          init_params = [], comparison = [], n = 500, 
                          high_perc = 84, low_perc = 16,
-                         plot = True, save_dist = True):
+                         plot = True, save_dist = True, datatype='Gyr'):
     '''
     Calculates percentiles for main sequence age, cooling age, total age, 
     final mass and initial mass of a white dwarf with teff0 and logg0. Works for
@@ -23,7 +23,7 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
     [log10(ms age (yr)),log10(cooling age (yr)), log10(totla age (yr)), 
     initial mass, final mass]
     '''
-    
+
     #Set the name to identify the results from each white dwarf
     teff_logg_name = 'results/teff_' + str(teff0) + '_logg_' + str(logg0)
     models_name =  '_feh_' + feh + '_vvcrit_' + vvcrit + '_' + model_wd + '_' + model_ifmr
@@ -57,27 +57,28 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
                             n=n, nsteps=n_mc, plot=plot, 
                             figname = fig_name, comparison=comparison)
 
+    ln_ms_age = flat_samples[:,0]
+    ln_cooling_age = flat_samples[:,1]
     if(save_dist == True):
         #Open file where the likelihood evaluations where saved
         like_eval = np.loadtxt(file_like_eval)
         
         #Use the likelihood evaluations for the dependent parameters 
         #and the posterior for the independen parameters
-        ln_ms_age = flat_samples[:,0]
-        ln_cooling_age = flat_samples[:,1]
         ln_total_age = like_eval[500:,2]
         initial_mass = like_eval[500:,3]
         final_mass = like_eval[500:,4]
         
         #Calculate percentiles for ms age, cooling age, total age, initial mass and final mass
         results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, 
-                                   final_mass, high_perc, low_perc, datatype='Gyr')
+                                   final_mass, high_perc, low_perc, datatype=datatype)
         
         plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age, 
                            initial_mass, final_mass, high_perc, low_perc, 
                            comparison = comparison, name = teff_logg_name + models_name)
     else:
-        results = []
+        results = calc_percentiles(ln_ms_age, ln_cooling_age, [], [], 
+                                   [], high_perc, low_perc, datatype=datatype)
         
     return results
 
