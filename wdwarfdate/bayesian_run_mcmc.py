@@ -23,8 +23,8 @@ def get_prior_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
     x = np.ones(Ntot)*np.nan
     y = np.ones(Ntot)*np.nan
 
-    x0 = np.linspace(4,11,n)
-    y0 = np.linspace(4,11,n)
+    x0 = np.linspace(4,13,n)
+    y0 = np.linspace(4,13,n)
 
     for ii in range(n):
         x[ii*n:(ii+1)*n] = np.ones(n)*x0[ii]
@@ -63,8 +63,8 @@ def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
     x = np.ones(Ntot)*np.nan
     y = np.ones(Ntot)*np.nan
 
-    x0 = np.linspace(4,11,n)
-    y0 = np.linspace(4,11,n)
+    x0 = np.linspace(4,13,n)
+    y0 = np.linspace(4,13,n)
 
     for ii in range(n):
         x[ii*n:(ii+1)*n] = np.ones(n)*x0[ii]

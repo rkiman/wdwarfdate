@@ -5,6 +5,9 @@ import numpy as np
 from astropy.table import Table
 from scipy import interpolate
 
+min_initial_mass_mist = 0.83 - 0.01
+max_initial_mass_mist =  7.20 + 0.3
+
 def ifmr(initial_mass,ifmr_model):
     '''
     Define Initial-Final Mass relation
@@ -18,9 +21,9 @@ def ifmr(initial_mass,ifmr_model):
         #Initial-Final mass relation from 
         #Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         #based on MIST isochrones
-        mask1 = (0.83 <= initial_mass) * (initial_mass < 2.85)
+        mask1 = (initial_mass < 2.85)#(min_initial_mass_mist <= initial_mass) * (initial_mass < 2.85)
         mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
-        mask3 = (3.60 <= initial_mass) * (initial_mass < 7.20)
+        mask3 = (3.60 <= initial_mass) #* (initial_mass < max_initial_mass_mist)
         final_mass[mask1] = initial_mass[mask1] * 0.08 + 0.489
         final_mass[mask2] = initial_mass[mask2] * 0.187 + 0.184
         final_mass[mask3] = initial_mass[mask3] * 0.107 + 0.471
@@ -110,8 +113,10 @@ def model_teff_logg(params,models):
     
     #Get the final mass from the initial-final mass relation
     #Return -inf if initial_mass values are not included in the model
+    '''
     if(ifmr_model == 'Cummings_2018_MIST'):
-        if(initial_mass >= 7.20 or initial_mass < 0.83):
+        if(initial_mass >= max_initial_mass_mist 
+           or initial_mass < min_initial_mass_mist):
             return 1.,1.
     elif(ifmr_model == 'Cummings_2018_PARSEC'):
         if(initial_mass >= 8.20 or initial_mass < 0.87):
@@ -119,6 +124,7 @@ def model_teff_logg(params,models):
     elif(ifmr_model == 'Salaris_2009'):
         if(initial_mass < 1.7):
             return 1.,1.
+    '''
         
     final_mass = ifmr(initial_mass,ifmr_model)
     
