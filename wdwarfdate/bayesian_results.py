@@ -55,8 +55,8 @@ def get_prior_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
 def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
     '''
     Creates a grid of main sequence age and cooling age and evaluates the
-    posterior on that grid. Also from the grid gets the distribution of posterior
-    for the two parameters: main sequence age and cooling age.
+    posterior on that grid. Also from the grid gets the distribution of 
+    posterior for the two parameters: main sequence age and cooling age.
     '''
     #Set up grid
     Ntot = n*n
@@ -105,15 +105,19 @@ def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500,
     
     #Obtain the distributions of prior and posterior for main sequence age
     #and cooling age
-    axis_prior, prior_list, prior_ms_age, prior_cooling_age = get_prior_dist(teff0, e_teff0, logg0, e_logg0, models0, n)
-    axis_post, post_list, post_ms_age, post_cooling_age, init_max_like = get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n)
+    r_prior = get_prior_dist(teff0, e_teff0, logg0, e_logg0, models0, n)
+    r_post = get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n)
+    
+    axis_prior, prior_list, prior_ms_age, prior_cooling_age = r_prior
+    axis_post, post_list, post_ms_age, post_cooling_age, init_max_like = r_post
     
     x0_prior, y0_prior, x_prior, y_prior = axis_prior
     x0_post, y0_post, x_post, y_post = axis_post
     
     #Plot parameter space for prior
     f,((ax3,ax4),(ax1,ax2)) = plt.subplots(2,2,figsize=(10,7))
-    ax3.scatter(x_prior,y_prior,c=np.exp(prior_list),s=5,cmap='Greys',label='Prior')
+    ax3.scatter(x_prior,y_prior,c=np.exp(prior_list),
+                s=5,cmap='Greys',label='Prior')
     if(len(comparison)!=0):
         ax3.axvline(x=comparison[0])
         ax3.axhline(y=comparison[1])
@@ -122,12 +126,15 @@ def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500,
     ax3.legend()
     
     #Plot parameter space for posterior
-    ax4.scatter(x_post,y_post,c=np.exp(post_list),s=5,cmap='Greys',label='Posterior')
+    ax4.scatter(x_post,y_post,c=np.exp(post_list),
+                s=5,cmap='Greys',label='Posterior')
     if(len(comparison)!=0):
         ax4.axvline(x=comparison[0])
         ax4.axhline(y=comparison[1])
-    ax4.set_xlim(np.nanmin(x_post[np.exp(post_list)!=0])-0.1,np.nanmax(x_post[np.exp(post_list)!=0])+0.1)
-    ax4.set_ylim(np.nanmin(y_post[np.exp(post_list)!=0])-0.1,np.nanmax(y_post[np.exp(post_list)!=0])+0.1)
+    ax4.set_xlim(np.nanmin(x_post[np.exp(post_list)!=0])-0.1,
+                 np.nanmax(x_post[np.exp(post_list)!=0])+0.1)
+    ax4.set_ylim(np.nanmin(y_post[np.exp(post_list)!=0])-0.1,
+                 np.nanmax(y_post[np.exp(post_list)!=0])+0.1)
     ax4.set_xlabel(r'$\log_{10}($MS Age$/yr)$')
     ax4.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
     ax4.legend()
@@ -137,7 +144,10 @@ def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500,
     ax1.plot(x0_post,post_ms_age,label='Posterior')
     ax1.set_ylim(0)
     if(all(x0_prior == x0_post)):
-        ax1.legend(title='KL(Post||Prior) = {0:.2f}'.format(kl_divergence(post_ms_age, prior_ms_age)))
+        kl_div = kl_divergence(post_ms_age, prior_ms_age)
+    else:
+        print("Can't calculate KL divergence because the x axis are different")
+        ax1.legend(title='KL(Post||Prior) = {0:.2f}'.format(kl_div))
     ax1.set_xlabel(r'$\log_{10}($MS Age$/yr)$')
     
     #Plot distribution of prior and posterior for cooling age
@@ -145,7 +155,10 @@ def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500,
     ax2.plot(x0_post,post_cooling_age,label='Posterior')
     ax2.set_ylim(0)
     if(all(x0_prior == x0_post)):
-        ax2.legend(title='KL(Post||Prior) = {0:.2f}'.format(kl_divergence(post_cooling_age, prior_cooling_age)))
+        kl_div = kl_divergence(post_cooling_age, prior_cooling_age)
+        ax2.legend(title='KL(Post||Prior) = {0:.2f}'.format(kl_div))
+    else:
+        print("Can't calculate KL divergence because the x axis are different")
     ax2.set_xlabel(r'$\log_{10}($Cooling Age$/yr)$')
     plt.tight_layout()
     plt.savefig(figname + '_post_prior_dist.png',dpi=300)
@@ -173,7 +186,8 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
         init_params = init_max_like
     elif(len(init_params)==0 and plot==True):
         init_max_like = plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0,
-                                             models0, n=n , comparison=comparison, 
+                                             models0, n=n , 
+                                             comparison=comparison, 
                                              figname=figname)
         init_params = init_max_like    
         
@@ -207,7 +221,8 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
         
         labels = [r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$']
         
-        fig = corner.corner(flat_samples, labels=labels, quantiles=[.16,.50,.84], 
+        fig = corner.corner(flat_samples, labels=labels, 
+                            quantiles=[.16,.50,.84], 
                             show_titles=True, title_kwargs={"fontsize": 12})
         fig.savefig(figname + '_corner_plot.png',dpi=300)
         plt.close(fig)
