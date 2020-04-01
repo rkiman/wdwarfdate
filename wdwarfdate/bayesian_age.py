@@ -4,6 +4,7 @@
 import numpy as np
 from astropy.table import Table
 from scipy import interpolate
+import pkg_resources
 
 min_initial_mass_mist = 0.83 - 0.01
 max_initial_mass_mist =  7.20 + 0.3
@@ -47,13 +48,18 @@ def ifmr(initial_mass,ifmr_model):
         final_mass[mask2] = initial_mass[mask2] * 0.047 + 0.679   
     return final_mass
 
-def get_cooling_model(model_wd):
-    
+def get_cooling_model(model_wd):  
+
+
     if(model_wd == 'DA'):
-        table_model = np.loadtxt('Models/cooling_models/Table_DA')
+        path = '../Models/cooling_models/Table_DA'
+        filepath = pkg_resources.resource_filename(__name__, path)
+        table_model = np.loadtxt(filepath)
 
     if(model_wd == 'DB'):
-        table_model = np.loadtxt('Models/cooling_models/Table_DB')
+        path = '../Models/cooling_models/Table_DB'
+        filepath = pkg_resources.resource_filename(__name__, path)
+        table_model = np.loadtxt(filepath)
     
     model_T = table_model[:,0]
     model_logg = table_model[:,1]
@@ -73,9 +79,12 @@ def get_isochrone_model(feh,vvcrit):
     Interpolates MIST isochrones to get a function that gives initial mass
     as a function of main sequence age.
     '''
-    file_path = 'Models/MIST/MIST_v1.2_feh_'
-    file = file_path + feh + '_afe_p0.0_vvcrit' + vvcrit + '_EEPS_sum.csv'
-    table_model = Table.read(file)
+    file_path = '../Models/MIST/MIST_v1.2_feh_'
+    path = file_path + feh + '_afe_p0.0_vvcrit' + vvcrit + '_EEPS_sum.csv'
+
+    filepath = pkg_resources.resource_filename(__name__, path)
+        
+    table_model = Table.read(filepath)
     
     model_initial_mass = table_model['initial_mass']
     model_ms_age = np.log10(table_model['ms_age'])
