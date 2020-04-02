@@ -52,7 +52,7 @@ def get_prior_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
         
     return axis, prior_list, prior_ms_age, prior_cooling_age
     
-def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
+def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=100):
     '''
     Creates a grid of main sequence age and cooling age and evaluates the
     posterior on that grid. Also from the grid gets the distribution of 
@@ -73,7 +73,8 @@ def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
     #Evaluate posterior on grid    
     post_list = []
     for x_i,y_i in zip(x,y):
-        post = ln_posterior_prob([x_i,y_i],teff0,e_teff0,logg0,e_logg0,models0)
+        post = ln_posterior_prob([x_i,y_i,0], #set delta_m = 0 
+                                 teff0,e_teff0,logg0,e_logg0,models0)
         post_list.append(post)
     post_list = np.array(post_list)
 
@@ -91,7 +92,7 @@ def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
     axis = x0, y0, x, y
     
     idx = np.argmax(post_list)
-    init_max_like = np.array([x[idx],y[idx]])
+    init_max_like = np.array([x[idx],y[idx],0])
     
     return axis, post_list, post_ms_age, post_cooling_age, init_max_like
 
@@ -175,24 +176,24 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
     of the parameters (final mass, initial mass and total age)
     '''
     
-    ndim, nwalkers = 2, 50 #nwalkers > 2*ndim
+    ndim, nwalkers = 3, 70 #nwalkers > 2*ndim
     
     
     #Obtain the maximum likelihood parameters if they are not given.
     #If plot is True it will output the plot to check results
-    if(len(init_params)==0 and plot==False):
-        _,_,_,_,init_max_like = get_post_dist(teff0, e_teff0, logg0, e_logg0, 
-                                              models0, n=n)
-        init_params = init_max_like
-    elif(len(init_params)==0 and plot==True):
-        init_max_like = plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0,
-                                             models0, n=n , 
-                                             comparison=comparison, 
-                                             figname=figname)
-        init_params = init_max_like    
+    #if(len(init_params)==0 and plot==False):
+    _,_,_,_,init_max_like = get_post_dist(teff0, e_teff0, logg0, e_logg0,
+                                          models0, n=n)
+    init_params = init_max_like
+    #elif(len(init_params)==0 and plot==True):
+    #    init_max_like = plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0,
+    #                                         models0, n=n , 
+    #                                         comparison=comparison, 
+    #                                         figname=figname)
+    #    init_params = init_max_like    
         
     #Initialize walkers    
-    p0 = np.array([init_params+np.random.rand(2)*0.2 for i in range(nwalkers)])
+    p0 = np.array([init_params+np.random.rand(3)*0.1 for i in range(nwalkers)])
     
     #Initialize sampler
     sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_posterior_prob,
@@ -205,7 +206,7 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
     flat_samples = chain.reshape((-1,ndim))
     
     if(plot == True):
-        f,(ax1,ax2) = plt.subplots(1,2,figsize=(8,3))
+        f,(ax1,ax2,ax3) = plt.subplots(1,3,figsize=(8,3))
         for i in range(50):
             ax1.plot(chain[i,:,0],color='k',alpha=0.05)
             ax1.axhline(y=np.median(flat_samples[:,0]),color='k')
@@ -215,11 +216,16 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
             ax2.plot(chain[i,:,1],color='k',alpha=0.05)
             ax2.axhline(y=np.median(flat_samples[:,1]),color='k')
         ax2.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
+        
+        for i in range(50):
+            ax3.plot(chain[i,:,2],color='k',alpha=0.05)
+            ax3.axhline(y=np.median(flat_samples[:,2]),color='k')
+        ax3.set_ylabel(r'$delta_m$')
         plt.tight_layout()
         plt.savefig(figname + '_walkers.png')
         plt.close(f)
         
-        labels = [r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$']
+        labels = [r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$',r'$delta_m$']
         
         fig = corner.corner(flat_samples, labels=labels, 
                             quantiles=[.16,.50,.84], 
