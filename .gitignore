@@ -1,5 +1,18 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+Models/MIST/*.txz
+Models/MIST/MIST_v1.2_feh_m4.00_afe_p0.0_vvcrit0.0_EEPS
+Models/MIST/MIST_v1.2_feh_m4.00_afe_p0.0_vvcrit0.4_EEPS
+Models/MIST/MIST_v1.2_feh_p0.00_afe_p0.0_vvcrit0.0_EEPS
+Models/MIST/MIST_v1.2_feh_p0.00_afe_p0.0_vvcrit0.4_EEPS
+Models/MIST/MIST_v1.2_feh_p0.50_afe_p0.0_vvcrit0.0_EEPS
+Models/MIST/MIST_v1.2_feh_p0.50_afe_p0.0_vvcrit0.4_EEPS
+Catalogs/
+results/gagne
+results/cummings
+results/garces
+results/base9
+
 *.py[cod]
 *$py.class
 
