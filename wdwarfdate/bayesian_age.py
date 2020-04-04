@@ -179,7 +179,7 @@ def model_teff_logg(params,models):
 
 def lnlike(params,teff,e_teff,logg,e_logg,models):
     
-    sigma_m = 0.1
+    sigma_m = 0.08
     _,_, delta_m = params
     model_teff,model_logg = model_teff_logg(params,models)
     

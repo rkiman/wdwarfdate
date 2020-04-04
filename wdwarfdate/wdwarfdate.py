@@ -13,7 +13,8 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
                          model_ifmr = 'Cummings_2018_MIST',
                          init_params = [], comparison = [], n = 500, 
                          high_perc = 84, low_perc = 16,
-                         plot = True, save_dist = True, datatype='Gyr'):
+                         plot = True, save_dist = True, datatype='Gyr',
+                         path='results/'):
     '''
     Calculates percentiles for main sequence age, cooling age, total age, 
     final mass and initial mass of a white dwarf with teff0 and logg0. 
@@ -25,14 +26,14 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
     '''
 
     #Set the name to identify the results from each white dwarf
-    teff_logg_name = 'results/teff_' + str(teff0) + '_logg_' + str(logg0)
+    teff_logg_name = 'teff_' + str(teff0) + '_logg_' + str(logg0)
     models_name_mist = '_feh_' + feh + '_vvcrit_' + vvcrit
     models_name = models_name_mist  + '_' + model_wd + '_' + model_ifmr
-    file_like_eval =  teff_logg_name + models_name + '.txt'
-    fig_name = teff_logg_name + models_name
+    file_like_eval =  path + teff_logg_name + models_name + '.txt'
+    fig_name = path + teff_logg_name + models_name
     
     if(save_dist == True):
-        dist_file_name = teff_logg_name + models_name
+        dist_file_name = path + teff_logg_name + models_name
     elif(save_dist == False):
         dist_file_name = 'None'
     
@@ -80,7 +81,7 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
                            ln_total_age, initial_mass, final_mass, 
                            high_perc, low_perc, 
                            comparison = comparison, 
-                           name = teff_logg_name + models_name)
+                           name = path + teff_logg_name + models_name)
     else:
         results = calc_percentiles(ln_ms_age, ln_cooling_age, [], [], 
                                    [], high_perc, low_perc, datatype=datatype)
