@@ -118,7 +118,7 @@ def model_teff_logg(params,models):
     #Get the initial mass from the main sequence age using isochrones
     #Return -inf if ms_age values that are not included in the model
     if(np.logical_or(ln_ms_age < np.nanmin(ms_age_model),
-                     ln_ms_age > np.nanmax(ms_age_model))):
+                     ln_ms_age > np.log10(13.8*1e9))):
         #print('ms age out of range')
         return 1.,1.
     initial_mass = f_initial_mass(ln_ms_age)
@@ -189,8 +189,7 @@ def lnlike(params,teff,e_teff,logg,e_logg,models):
         loglike_teff_exp = (teff-model_teff)**2/e_teff**2
         loglike_logg_exp = (logg-model_logg)**2/e_logg**2
         loglike_delta_m = delta_m**2/sigma_m**2
-        return -0.5*(np.sum(loglike_teff_exp + loglike_logg_exp + 
-                            loglike_delta_m))
+        return (-.5*(np.sum(loglike_teff_exp+loglike_logg_exp+loglike_delta_m))) 
     
 def ln_posterior_prob(params,teff,e_teff,logg,e_logg,models):
     

@@ -193,7 +193,8 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
     #    init_params = init_max_like    
         
     #Initialize walkers    
-    p0 = np.array([init_params+np.random.rand(3)*0.1 for i in range(nwalkers)])
+    p0 = np.array([init_params
+                   + np.random.uniform(-.05,.05,3) for i in range(nwalkers)])
     
     #Initialize sampler
     sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_posterior_prob,
