@@ -145,7 +145,7 @@ for i in range(len(garces2011)):
                                                 path='results/garces/')
     result_garces2011[i,:] = r_g2011_i
     
-table_name = 'Garces2011_results_bayesian.fits'
+table_name = 'results/Garces2011_results_bayesian.fits'
 
 result_garces2011_table = Table()
 result_garces2011_table['ms_age_median'] = result_garces2011[:,0]
