@@ -112,8 +112,8 @@ def model_teff_logg(params,models):
     ln_total_age = np.log10(10**ln_cooling_age + 10**ln_ms_age)
     #print('total age: {}'.format(ln_total_age))
     
-    #if((10**ln_total_age)/1e9 >= 13.8):
-    #    return 1.,1.
+    if((10**ln_total_age)/1e9 >= 13.8):
+        return 1.,1.
     
     #Get the initial mass from the main sequence age using isochrones
     #Return -inf if ms_age values that are not included in the model
