@@ -3,9 +3,6 @@
 
 from setuptools import setup
 
-with open("wdwarfdate/version.py", "r") as f:
-    exec(f.read())
-
 setup(name='wdwarfdate_code',
       version="0.1.0",
       description='Calculates white dwarfs ages from Gaia photometry.',
