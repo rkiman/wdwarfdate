@@ -84,3 +84,4 @@ The variable results now contains the percentiles indicated and the median for e
     final_mass_err_low = results[:,13]
     final_mass_err_high = results[:,14]
 
+Coming soon: Documentation
