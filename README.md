@@ -9,16 +9,15 @@ wdwarfdate
 Installation
 ============
 
-.. code-block:: bash
-
+```bash
     git clone https://github.com/rkiman/wdwarfdate.git
     cd wdwarfdate
     python setup.py install
+```
 
 Example usage
 -------------
 ```python
-
     import wdwarfdate
 
     #Define data for the white dwarf
@@ -58,8 +57,8 @@ Example usage
     results[i,:] = results_i
 ```
 
-*wdwarfdate* allow you to select which models you want to use for the white dwarfs: the initial-final mass relation, DA or DB, and the parameter for the isochrone. 
-This run will save three files per star a folder call results:
+*wdwarfdate* allows you to select which models you want to use for the white dwarfs: the initial-final mass relation, DA or DB, and the parameter for the isochrone. 
+This run will save three files per star in a folder called results:
 
 1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corner_plot.png which contains the corner plot for the three variables the code samples: main sequence age, cooling age and delta m.
 
@@ -67,7 +66,7 @@ This run will save three files per star a folder call results:
 
 3. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age).
 
-The variable results now contains the percentiles indicated and the median for each parameter.
+The variable *results* now contains the percentiles indicated and the median for each parameter.
 
 ```python
     ms_age_median = results[:,0]
