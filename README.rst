@@ -1,8 +1,9 @@
 
 wdwarfdate
 ====================================
-<!---
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2712419.svg
+.. ..
+
+<!---.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2712419.svg
    :target: https://doi.org/10.5281/zenodo.2712419
 
 .. image:: http://joss.theoj.org/papers/ee2bbcd6b8fd88492d60f2fe77f4fcdd/status.svg
@@ -18,6 +19,7 @@ Checkout `the documentation <https://stardate.readthedocs.io/en/latest/>`_.
 
 *stardate* currently only works with python3.
 --->
+
 *wdwarfdate* is a code which combines different models in a bayesian framework to calculate ages of white dwarfs from an effective temperature and a surface gravity. 
 
 
@@ -33,7 +35,7 @@ Installation
 
 Example usage
 -------------
-::
+.. code-block:: python
 
     import wdwarfdate
 
@@ -52,7 +54,7 @@ Example usage
 
 *wdwarfdate* runs one star at a time, so we have to loop over the stars we have
 
-::
+.. code-block:: python
     N = len(teff)
     results = np.ones((N,15))*np.nan
     model_ifmr = 'Cummings_2018_MIST'
