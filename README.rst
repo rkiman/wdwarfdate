@@ -1,7 +1,7 @@
 
 wdwarfdate
 ====================================
- <!---
+<!---
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2712419.svg
    :target: https://doi.org/10.5281/zenodo.2712419
 
@@ -17,7 +17,7 @@ wdwarfdate
 Checkout `the documentation <https://stardate.readthedocs.io/en/latest/>`_.
 
 *stardate* currently only works with python3.
- --->
+--->
 *wdwarfdate* is a code which combines different models in a bayesian framework to calculate ages of white dwarfs from an effective temperature and a surface gravity. 
 
 
@@ -30,37 +30,7 @@ Installation
     git clone https://github.com/rkiman/wdwarfdate.git
     cd wdwarfdate
     python setup.py install
- <!---
-Dependencies
-------------
 
-The dependencies of *stardate* are
-`NumPy <http://www.numpy.org/>`_,
-`pandas <https://pandas.pydata.org/>`_,
-`h5py <https://www.h5py.org/>`_,
-`numba <http://numba.pydata.org/>`_,
-`emcee3 <https://emcee.readthedocs.io/en/latest/>`_,
-`tqdm <https://tqdm.github.io/>`_ and
-`isochrones <https://github.com/timothydmorton/isochrones>`_.
-
-These can be installed using pip:
-
-.. code-block:: bash
-
-    pip install numpy pandas h5py numba "emcee==3.0rc2" tqdm isochrones
-
-.. You'll also need to download isochrones:
-
-.. .. code-block:: bash
-
-..     git clone https://github.com/timothydmorton/isochrones
-..     cd isochrones
-..     python setup.py install
-
-You can check out the
-`isochrones <https://isochrones.readthedocs.io/en/latest/index.html>`_
-documentation if you run into difficulties installing that.
- --->
 Example usage
 -------------
 ::
