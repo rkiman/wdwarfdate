@@ -1,24 +1,6 @@
 
 wdwarfdate
 ====================================
-.. ..
-
-<!---.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2712419.svg
-   :target: https://doi.org/10.5281/zenodo.2712419
-
-.. image:: http://joss.theoj.org/papers/ee2bbcd6b8fd88492d60f2fe77f4fcdd/status.svg
-   :target: http://joss.theoj.org/papers/ee2bbcd6b8fd88492d60f2fe77f4fcdd
-
-.. image:: https://travis-ci.org/RuthAngus/stardate.svg?branch=master
-    :target: https://travis-ci.org/RuthAngus/stardate
-
-.. image:: https://readthedocs.org/projects/stardate/badge/?version=latest
-    :target: https://stardate.readthedocs.io/en/latest/?badge=latest
-
-Checkout `the documentation <https://stardate.readthedocs.io/en/latest/>`_.
-
-*stardate* currently only works with python3.
---->
 
 *wdwarfdate* is a code which combines different models in a bayesian framework to calculate ages of white dwarfs from an effective temperature and a surface gravity. 
 
@@ -76,13 +58,16 @@ Example usage
 
 *wdwarfdate* allow you to select which models you want to use for the white dwarfs: the initial-final mass relation, DA or DB, and the parameter for the isochrone. 
 This run will save three files per star a folder call results:
+
 1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corner_plot.png which contains the corner plot for the three variables the code samples: main sequence age, cooling age and delta m.
+
 2. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_walkers.png which contains the traces for each walker to confirm convergence of the code.
+
 3. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age).
 
 The variable results now contains the percentiles indicated and the median for each parameter.
 
-::
+.. code-block:: python
     ms_age_median = results[:,0]
     ms_age_err_low = results[:,1]
     ms_age_err_high = results[:,2]
