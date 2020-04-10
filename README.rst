@@ -33,6 +33,7 @@ Example usage
     t_cool = np.array([8.060697840353612,8.298853076409706])
     t_ms = np.array([8.658011396657113,8.569373909615045])
     t_tot = np.array([8.755874855672491,8.755874855672491])
+    >>
 
 *wdwarfdate* runs one star at a time, so we have to loop over the stars we have
 
@@ -55,6 +56,7 @@ Example usage
                                                     save_dist = True,
                                                     datatype = 'Gyr')
     results[i,:] = results_i
+    >>
 
 *wdwarfdate* allow you to select which models you want to use for the white dwarfs: the initial-final mass relation, DA or DB, and the parameter for the isochrone. 
 This run will save three files per star a folder call results:
@@ -83,5 +85,6 @@ The variable results now contains the percentiles indicated and the median for e
     final_mass_median = results[:,12]
     final_mass_err_low = results[:,13]
     final_mass_err_high = results[:,14]
+    >>
 
 Coming soon: Documentation
