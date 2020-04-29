@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from src.extra_func import calc_percentiles
+from wdwarfdate.extra_func import calc_percentiles
 import numpy as np
 
 def test_calc_percentiles():
