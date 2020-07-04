@@ -28,7 +28,7 @@ def calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass,
         final_mass_low = final_mass_median - np.nanpercentile(final_mass,low_perc)
         final_mass_high = np.nanpercentile(final_mass,high_perc) - final_mass_median
         
-    if(datatype=='Gyr'):
+    elif(datatype=='Gyr'):
         ms_age_median = np.nanpercentile((10**ln_ms_age)/1e9,50)
         ms_age_err_low = ms_age_median - np.nanpercentile((10**ln_ms_age)/1e9,low_perc)
         ms_age_err_high = np.nanpercentile((10**ln_ms_age)/1e9,high_perc) - ms_age_median
@@ -48,8 +48,8 @@ def calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass,
         final_mass_median = np.nanpercentile(final_mass,50)
         final_mass_low = final_mass_median - np.nanpercentile(final_mass,low_perc)
         final_mass_high = np.nanpercentile(final_mass,high_perc) - final_mass_median
-
-    if(datatype=='yr'):
+        
+    elif(datatype=='yr'):
         ms_age_median = np.nanpercentile(10**ln_ms_age,50)
         ms_age_err_low = ms_age_median - np.nanpercentile(10**ln_ms_age,low_perc)
         ms_age_err_high = np.nanpercentile(10**ln_ms_age,high_perc) - ms_age_median

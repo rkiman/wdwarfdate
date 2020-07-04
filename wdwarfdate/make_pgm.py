@@ -20,10 +20,10 @@ def make_and_save_pgm():
     pgm.add_node("msage", r"$t_{ms_n}$", 1.4, 6)
     pgm.add_node("coolingage", r"$t_{cool_n}$", 2.4, 6)
     pgm.add_node("totalage", r"$t_{tot_n}$", 1.9, 5.3)
-    pgm.add_node("initialmass", r"$m_{i_m}$", 1.4, 5)
+    pgm.add_node("initialmass", r"$m_{i_n}$", 1.4, 5)
     pgm.add_node("deltam", r"$\Delta_{m_n}$", 0.9, 3.5)
-    pgm.add_node("finalmass_hat", r"$\hat{m_{f_m}}$", 1.4, 4)
-    pgm.add_node("finalmass", r"$m_{f_m}$", 1.4, 3)
+    pgm.add_node("finalmass_hat", r"$\hat{m_{f_n}}$", 1.4, 4)
+    pgm.add_node("finalmass", r"$m_{f_n}$", 1.4, 3)
     pgm.add_node("teff", r"$T_{eff_n}$", 1.4, 2)
     pgm.add_node("logg", r"$logg_n$", 2.4, 2)
     
@@ -55,3 +55,5 @@ def make_and_save_pgm():
     pgm.savefig("../model.png", dpi=300)
 
 
+#Leave this commented so it doesn't make a plot everytime I import the package
+#make_and_save_pgm()

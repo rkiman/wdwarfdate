@@ -5,52 +5,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import emcee
 import corner
+import os
 from .bayesian_age import ln_posterior_prob, ln_prior
+from .check_convergence import calc_auto_corr_time
 
 def kl_divergence(p, q):
     mask = (q != 0.0) * (p != 0.0)
     return np.sum(p[mask] * np.log(p[mask] / q[mask]))
 
-def get_prior_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
-    '''
-    Creates a grid of main sequence age and cooling age and evaluates the
-    prior on that grid. Also from the grid gets the distribution of prior for
-    the two parameters: main sequence age and cooling age.
-    '''
-    
-    #Set up grid
-    Ntot = n*n
-    x = np.ones(Ntot)*np.nan
-    y = np.ones(Ntot)*np.nan
-
-    x0 = np.linspace(4,13,n)
-    y0 = np.linspace(4,13,n)
-
-    for ii in range(n):
-        x[ii*n:(ii+1)*n] = np.ones(n)*x0[ii]
-        y[ii*n:(ii+1)*n] = y0
-    
-    #Evaluate prior on grid
-    prior_list = []
-    for x_i,y_i in zip(x,y):
-        prior = ln_prior([x_i,y_i],teff0,e_teff0,logg0,e_logg0,models0)
-        prior_list.append(prior)
-    prior_list = np.array(prior_list)
-    
-    #Colapse grid to obtain distributions of prior in main sequence age and
-    #cooling age dimensions
-    prior_ms_age = np.array([sum(np.exp(prior_list[x==x0_i])) for x0_i in x0])
-    prior_cooling_age = np.array([sum(np.exp(prior_list[y==y0_i])) for y0_i in y0])
-    
-    #Normalize distribution so the sum is 1
-    norm_x = sum(prior_ms_age)*(x0[1]-x0[0])
-    norm_y = sum(prior_cooling_age)*(y0[1]-y0[0])   
-    prior_ms_age = prior_ms_age/norm_x
-    prior_cooling_age = prior_cooling_age/norm_y
-    
-    axis = x0, y0, x, y
-        
-    return axis, prior_list, prior_ms_age, prior_cooling_age
     
 def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=100):
     '''
@@ -95,6 +57,84 @@ def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=100):
     init_max_like = np.array([x[idx],y[idx],0])
     
     return axis, post_list, post_ms_age, post_cooling_age, init_max_like
+
+def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
+             nsteps = 1000, plot=True, figname = 'run_', comparison=[]):
+    '''
+    Starting from the maximum likelihood ages (main sequence age and cooling
+    age), samples the posterior to get the likelihood evaluations of the rest 
+    of the parameters (final mass, initial mass and total age)
+    '''
+    
+    ndim, nwalkers = 3, 70 #nwalkers > 2*ndim
+    
+    
+    #Obtain the maximum likelihood parameters if they are not given.
+    #If plot is True it will output the plot to check results
+    #if(len(init_params)==0 and plot==False):
+    _,_,_,_,init_max_like = get_post_dist(teff0, e_teff0, logg0, e_logg0,
+                                          models0, n=n)
+    init_params = init_max_like 
+        
+    #Initialize walkers    
+    p0 = np.array([init_params
+                   + np.random.uniform(-.05,.05,3) for i in range(nwalkers)])
+    
+    #Initialize sampler
+    sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_posterior_prob,
+                                    args=[teff0,e_teff0,logg0,e_logg0,models0])
+    
+    #Running burn in
+    p0_new,_,_ = sampler.run_mcmc(p0, 1000)
+    
+    sampler.reset()
+    
+    #Running mcmc to calculate auto-correlation time'
+    p,_,_ = sampler.run_mcmc(p0_new, 10000)
+    chain = sampler.chain
+    autoc_time = calc_auto_corr_time(chain,figname+'_corr_time.png')
+    sampler.reset()
+    _,_,_,_,dist_file_name = models0
+    save_likelihoods_file = dist_file_name +'.txt'
+    os.remove(save_likelihoods_file)
+    
+    #Run mcmc
+    #Running mcmc to calculate parameters
+    p,_,_ = sampler.run_mcmc(p, 1000*autoc_time);
+    
+    #Obtain chain of samples
+    chain = sampler.chain[:,500:,:]
+    flat_samples = chain.reshape((-1,ndim))
+    
+    if(plot == True):
+        f,(ax1,ax2,ax3) = plt.subplots(1,3,figsize=(8,3))
+        for i in range(50):
+            ax1.plot(chain[i,:,0],color='k',alpha=0.05)
+            ax1.axhline(y=np.median(flat_samples[:,0]),color='k')
+        ax1.set_ylabel(r'$\log_{10}($MS Age$/yr)$')
+        
+        for i in range(50):
+            ax2.plot(chain[i,:,1],color='k',alpha=0.05)
+            ax2.axhline(y=np.median(flat_samples[:,1]),color='k')
+        ax2.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
+        
+        for i in range(50):
+            ax3.plot(chain[i,:,2],color='k',alpha=0.05)
+            ax3.axhline(y=np.median(flat_samples[:,2]),color='k')
+        ax3.set_ylabel(r'$delta_m$')
+        plt.tight_layout()
+        plt.savefig(figname + '_walkers.png')
+        plt.close(f)
+        
+        labels = [r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$',r'$delta_m$']
+        
+        fig = corner.corner(flat_samples, labels=labels, 
+                            quantiles=[.16,.50,.84], 
+                            show_titles=True, title_kwargs={"fontsize": 12})
+        fig.savefig(figname + '_corner_plot.png',dpi=300)
+        plt.close(fig)
+    
+    return flat_samples
 
 def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500, 
                          comparison = [], figname = 'run'):
@@ -168,70 +208,43 @@ def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500,
     #Return the maximum likelihood [ms age,cooling age]
     return init_max_like
 
-def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
-             nsteps = 1000, plot=True, figname = 'run_', comparison=[]):
+def get_prior_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500):
     '''
-    Starting from the maximum likelihood ages (main sequence age and cooling
-    age), samples the posterior to get the likelihood evaluations of the rest 
-    of the parameters (final mass, initial mass and total age)
+    Creates a grid of main sequence age and cooling age and evaluates the
+    prior on that grid. Also from the grid gets the distribution of prior for
+    the two parameters: main sequence age and cooling age.
     '''
     
-    ndim, nwalkers = 3, 70 #nwalkers > 2*ndim
+    #Set up grid
+    Ntot = n*n
+    x = np.ones(Ntot)*np.nan
+    y = np.ones(Ntot)*np.nan
+
+    x0 = np.linspace(4,13,n)
+    y0 = np.linspace(4,13,n)
+
+    for ii in range(n):
+        x[ii*n:(ii+1)*n] = np.ones(n)*x0[ii]
+        y[ii*n:(ii+1)*n] = y0
     
+    #Evaluate prior on grid
+    prior_list = []
+    for x_i,y_i in zip(x,y):
+        prior = ln_prior([x_i,y_i],teff0,e_teff0,logg0,e_logg0,models0)
+        prior_list.append(prior)
+    prior_list = np.array(prior_list)
     
-    #Obtain the maximum likelihood parameters if they are not given.
-    #If plot is True it will output the plot to check results
-    #if(len(init_params)==0 and plot==False):
-    _,_,_,_,init_max_like = get_post_dist(teff0, e_teff0, logg0, e_logg0,
-                                          models0, n=n)
-    init_params = init_max_like
-    #elif(len(init_params)==0 and plot==True):
-    #    init_max_like = plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0,
-    #                                         models0, n=n , 
-    #                                         comparison=comparison, 
-    #                                         figname=figname)
-    #    init_params = init_max_like    
+    #Colapse grid to obtain distributions of prior in main sequence age and
+    #cooling age dimensions
+    prior_ms_age = np.array([sum(np.exp(prior_list[x==x0_i])) for x0_i in x0])
+    prior_cooling_age = np.array([sum(np.exp(prior_list[y==y0_i])) for y0_i in y0])
+    
+    #Normalize distribution so the sum is 1
+    norm_x = sum(prior_ms_age)*(x0[1]-x0[0])
+    norm_y = sum(prior_cooling_age)*(y0[1]-y0[0])   
+    prior_ms_age = prior_ms_age/norm_x
+    prior_cooling_age = prior_cooling_age/norm_y
+    
+    axis = x0, y0, x, y
         
-    #Initialize walkers    
-    p0 = np.array([init_params
-                   + np.random.uniform(-.05,.05,3) for i in range(nwalkers)])
-    
-    #Initialize sampler
-    sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_posterior_prob,
-                                    args=[teff0,e_teff0,logg0,e_logg0,models0])
-    #Run mcmc
-    p,_,_ = sampler.run_mcmc(p0,nsteps);
-    
-    #Obtain chain of samples
-    chain = sampler.chain[:,500:,:]
-    flat_samples = chain.reshape((-1,ndim))
-    
-    if(plot == True):
-        f,(ax1,ax2,ax3) = plt.subplots(1,3,figsize=(8,3))
-        for i in range(50):
-            ax1.plot(chain[i,:,0],color='k',alpha=0.05)
-            ax1.axhline(y=np.median(flat_samples[:,0]),color='k')
-        ax1.set_ylabel(r'$\log_{10}($MS Age$/yr)$')
-        
-        for i in range(50):
-            ax2.plot(chain[i,:,1],color='k',alpha=0.05)
-            ax2.axhline(y=np.median(flat_samples[:,1]),color='k')
-        ax2.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
-        
-        for i in range(50):
-            ax3.plot(chain[i,:,2],color='k',alpha=0.05)
-            ax3.axhline(y=np.median(flat_samples[:,2]),color='k')
-        ax3.set_ylabel(r'$delta_m$')
-        plt.tight_layout()
-        plt.savefig(figname + '_walkers.png')
-        plt.close(f)
-        
-        labels = [r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$',r'$delta_m$']
-        
-        fig = corner.corner(flat_samples, labels=labels, 
-                            quantiles=[.16,.50,.84], 
-                            show_titles=True, title_kwargs={"fontsize": 12})
-        fig.savefig(figname + '_corner_plot.png',dpi=300)
-        plt.close(fig)
-    
-    return flat_samples
+    return axis, prior_list, prior_ms_age, prior_cooling_age

@@ -45,8 +45,8 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,n_mc=1000,
                dist_file_name]
     
     #If it doesn't exist, creates a folder to save the plots
-    if not os.path.exists('results'):
-        os.makedirs('results')
+    if not os.path.exists(path):
+        os.makedirs(path)
        
     #Check if file exists and remove if it does so if can be filled again
     if os.path.exists(file_like_eval):
