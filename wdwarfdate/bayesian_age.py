@@ -9,7 +9,7 @@ import pkg_resources
 min_initial_mass_mist = 0.83 - 0.1
 max_initial_mass_mist =  7.20 + 0.1
 
-def ifmr(initial_mass,ifmr_model):
+def ifmr_bayesian(initial_mass,ifmr_model):
     '''
     Define Initial-Final Mass relation
     '''
@@ -101,7 +101,7 @@ def model_teff_logg(params,models):
     Obtains teff and logg from main sequence age and cooling age
     '''
     #Define models to use
-    ifmr_model,isochrone_model,cooling_models,fig_name,dist_file_name = models
+    model_ifmr,isochrone_model,cooling_models,wd_path_id=models
     f_teff,f_logg,cooling_age_model,final_mass_model = cooling_models
     f_initial_mass,model_initial_mass,ms_age_model = isochrone_model
     
@@ -127,19 +127,19 @@ def model_teff_logg(params,models):
     #Get the final mass from the initial-final mass relation
     #Return -inf if initial_mass values are not included in the model
     
-    if(ifmr_model == 'Cummings_2018_MIST'):
+    if(model_ifmr == 'Cummings_2018_MIST'):
         if(initial_mass >= max_initial_mass_mist 
            or initial_mass < min_initial_mass_mist):
             return 1.,1.
-    elif(ifmr_model == 'Cummings_2018_PARSEC'):
+    elif(model_ifmr == 'Cummings_2018_PARSEC'):
         if(initial_mass >= 8.20 or initial_mass < 0.87):
             return 1.,1.
-    elif(ifmr_model == 'Salaris_2009'):
+    elif(model_ifmr == 'Salaris_2009'):
         if(initial_mass < 1.7):
             return 1.,1.
     
     
-    final_mass = ifmr(initial_mass,ifmr_model)
+    final_mass = ifmr_bayesian(initial_mass,model_ifmr)
     final_mass = final_mass + delta_m
     #print('final mass: {}'.format(final_mass))
     
@@ -167,14 +167,13 @@ def model_teff_logg(params,models):
         return 1.,1.
     
     #Saving the likelihoods evaluations
-    if(dist_file_name != 'None'):
-        save_likelihoods_file = dist_file_name +'.txt'
-        save_likelihoods = open(save_likelihoods_file,'a')
-        save_likelihoods.write(str(ln_ms_age) + '\t' + 
-                               str(ln_cooling_age) + '\t' + 
-                               str(ln_total_age) + '\t' + 
-                               str(initial_mass) + '\t' + 
-                               str(final_mass) + '\n')
+    save_likelihoods_file = wd_path_id +'.txt'
+    save_likelihoods = open(save_likelihoods_file,'a')
+    save_likelihoods.write(str(ln_ms_age) + '\t' + 
+                           str(ln_cooling_age) + '\t' + 
+                           str(ln_total_age) + '\t' + 
+                           str(initial_mass) + '\t' + 
+                           str(final_mass) + '\n')
     return teff_model,logg_model
 
 def lnlike(params,teff,e_teff,logg,e_logg,models):

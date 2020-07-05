@@ -1,5 +1,5 @@
-from .coolingage import *
-from .final2initial_mass import *
+from .cooling_age import *
+from .ifmr import *
 from .ms_age import *
 from .wdwarfdate import *
 from .make_models_fit import *

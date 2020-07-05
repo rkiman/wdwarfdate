@@ -58,22 +58,22 @@ def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=100):
     
     return axis, post_list, post_ms_age, post_cooling_age, init_max_like
 
-def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
-             nsteps = 1000, plot=True, figname = 'run_', comparison=[]):
+def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, 
+             init_params, comparison,nburn_in,n_calc_auto_corr,n_idep_samples):
     '''
     Starting from the maximum likelihood ages (main sequence age and cooling
     age), samples the posterior to get the likelihood evaluations of the rest 
     of the parameters (final mass, initial mass and total age)
     '''
-    
+
+    _,_,_,wd_path_id = models0
     ndim, nwalkers = 3, 70 #nwalkers > 2*ndim
     
     
     #Obtain the maximum likelihood parameters if they are not given.
-    #If plot is True it will output the plot to check results
     #if(len(init_params)==0 and plot==False):
     _,_,_,_,init_max_like = get_post_dist(teff0, e_teff0, logg0, e_logg0,
-                                          models0, n=n)
+                                          models0, n=500)
     init_params = init_max_like 
         
     #Initialize walkers    
@@ -81,60 +81,67 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, init_params=[], n=500,
                    + np.random.uniform(-.05,.05,3) for i in range(nwalkers)])
     
     #Initialize sampler
+    
     sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_posterior_prob,
                                     args=[teff0,e_teff0,logg0,e_logg0,models0])
     
     #Running burn in
-    p0_new,_,_ = sampler.run_mcmc(p0, 1000)
+    p0_new,_,_ = sampler.run_mcmc(p0, nburn_in)
     
     sampler.reset()
     
     #Running mcmc to calculate auto-correlation time'
-    p,_,_ = sampler.run_mcmc(p0_new, 10000)
+    p,_,_ = sampler.run_mcmc(p0_new, n_calc_auto_corr)
     chain = sampler.chain
-    autoc_time = calc_auto_corr_time(chain,figname+'_corr_time.png')
+    autoc_time = calc_auto_corr_time(chain,wd_path_id+'_corr_time.png')
+    
+    #Reset sampler and remove the save likelihood evaluation that were saved
+    #while calculating autocorrelation time and burn in
     sampler.reset()
-    _,_,_,_,dist_file_name = models0
-    save_likelihoods_file = dist_file_name +'.txt'
+    save_likelihoods_file = wd_path_id +'.txt'
     os.remove(save_likelihoods_file)
     
-    #Run mcmc
-    #Running mcmc to calculate parameters
-    p,_,_ = sampler.run_mcmc(p, 1000*autoc_time);
+    #Run mcmc to calculate parameters
+    p,_,_ = sampler.run_mcmc(p, n_idep_samples*autoc_time);
     
     #Obtain chain of samples
     chain = sampler.chain[:,500:,:]
     flat_samples = chain.reshape((-1,ndim))
     
-    if(plot == True):
-        f,(ax1,ax2,ax3) = plt.subplots(1,3,figsize=(8,3))
-        for i in range(50):
-            ax1.plot(chain[i,:,0],color='k',alpha=0.05)
-            ax1.axhline(y=np.median(flat_samples[:,0]),color='k')
-        ax1.set_ylabel(r'$\log_{10}($MS Age$/yr)$')
-        
-        for i in range(50):
-            ax2.plot(chain[i,:,1],color='k',alpha=0.05)
-            ax2.axhline(y=np.median(flat_samples[:,1]),color='k')
-        ax2.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
-        
-        for i in range(50):
-            ax3.plot(chain[i,:,2],color='k',alpha=0.05)
-            ax3.axhline(y=np.median(flat_samples[:,2]),color='k')
-        ax3.set_ylabel(r'$delta_m$')
-        plt.tight_layout()
-        plt.savefig(figname + '_walkers.png')
-        plt.close(f)
-        
-        labels = [r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$',r'$delta_m$']
-        
-        fig = corner.corner(flat_samples, labels=labels, 
-                            quantiles=[.16,.50,.84], 
-                            show_titles=True, title_kwargs={"fontsize": 12})
-        fig.savefig(figname + '_corner_plot.png',dpi=300)
-        plt.close(fig)
-    
+    plot_results_mcmc(chain,ndim,wd_path_id)
+
     return flat_samples
+
+def plot_results_mcmc(chain,ndim,wd_path_id):
+    flat_samples = chain.reshape((-1,ndim))
+    
+    f,(ax1,ax2,ax3) = plt.subplots(1,3,figsize=(8,3))
+    for i in range(50):
+        ax1.plot(chain[i,:,0],color='k',alpha=0.05)
+        ax1.axhline(y=np.median(flat_samples[:,0]),color='k')
+    ax1.set_ylabel(r'$\log_{10}($MS Age$/yr)$')
+    
+    for i in range(50):
+        ax2.plot(chain[i,:,1],color='k',alpha=0.05)
+        ax2.axhline(y=np.median(flat_samples[:,1]),color='k')
+    ax2.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
+    
+    for i in range(50):
+        ax3.plot(chain[i,:,2],color='k',alpha=0.05)
+        ax3.axhline(y=np.median(flat_samples[:,2]),color='k')
+    ax3.set_ylabel(r'$delta_m$')
+    plt.tight_layout()
+    plt.savefig(wd_path_id + '_walkers.png')
+    plt.close(f)
+    
+    labels=[r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$',r'$delta_m$']
+    
+    fig = corner.corner(flat_samples, labels=labels, 
+                        quantiles=[.16,.50,.84], 
+                        show_titles=True, title_kwargs={"fontsize": 12})
+    fig.savefig(wd_path_id + '_corner_plot.png',dpi=300)
+    plt.close(fig)
+
 
 def plot_prior_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=500, 
                          comparison = [], figname = 'run'):

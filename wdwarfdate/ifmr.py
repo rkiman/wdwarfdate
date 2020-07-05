@@ -8,7 +8,7 @@ def calc_initial_mass(model_ifmr,final_mass_dist,n_mc):
     '''        
     initial_mass_dist = []
     
-    if(model_ifmr == 'Cummings_2018'):
+    if(model_ifmr == 'Cummings_2018_MIST'):
         '''
         Uses initial-final mass relation from 
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
