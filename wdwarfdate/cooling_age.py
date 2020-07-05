@@ -1,14 +1,19 @@
 import numpy as np
 from scipy import interpolate
+import pkg_resources
 
 def calc_cooling_age(teff_dist,logg_dist,n_mc,N,model,plot_fit=False):
         
     if(model == 'DA'):
-        table_model = np.loadtxt('Models/cooling_models/Table_DA')
+        path = '../Models/cooling_models/Table_DA'
+        filepath = pkg_resources.resource_filename(__name__, path)
+        table_model = np.loadtxt(filepath)
         rows = 51
         
     if(model == 'DB'):
-        table_model = np.loadtxt('Models/cooling_models/Table_DB')
+        path = '../Models/cooling_models/Table_DB'
+        filepath = pkg_resources.resource_filename(__name__, path)
+        table_model = np.loadtxt(filepath)
         rows = 62
     
 

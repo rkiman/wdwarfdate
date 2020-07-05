@@ -1,12 +1,16 @@
 import numpy as np
 from astropy.table import Table
 from scipy import interpolate
+import pkg_resources
 
 def calc_ms_age(initial_mass_dist,feh,vvcrit):
     ms_age_dist = []
     
-    file = 'Models/MIST/MIST_v1.2_feh_'+feh+'_afe_p0.0_vvcrit'+vvcrit+'_EEPS_sum.csv'
-    table_model = Table.read(file)
+    path1 = '../Models/MIST/MIST_v1.2_feh_'
+    path2 = feh+'_afe_p0.0_vvcrit'+vvcrit+'_EEPS_sum.csv'
+    filepath = pkg_resources.resource_filename(__name__, path1+path2)
+
+    table_model = Table.read(filepath)
     
     model_initial_mass = table_model['initial_mass']
     model_ms_age = table_model['ms_age']
