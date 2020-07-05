@@ -24,10 +24,10 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
     
     Parameters
     ----------
-    teff0 : scalar. Effective temperature of the white dwarf
-    e_teff0 : scalar. Error in the effective temperature of the white dwarf
-    logg0 : scalar. Surface gravity of the white dwarf
-    e_logg0 : scalar. Error in surface gravity of the white dwarf
+    teff0 : scalar, array. Effective temperature of the white dwarf
+    e_teff0 : scalar, array. Error in the effective temperature of the white dwarf
+    logg0 : scalar, array. Surface gravity of the white dwarf
+    e_logg0 : scalar, arraya. Error in surface gravity of the white dwarf
     method : string. 'bayesian' or 'freq'. Bayesian will run an mcmc and 
              output the distributions. Freq runs a normal distribution 
              centered at the value with a std of the error through all the 
@@ -68,28 +68,49 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
     results : astropy Table with the results for each white dwarf parameter.
     """
     if(method=='bayesian'):
-        #Set name of path and wd models to identif results
-        wd_path_id = get_wd_path_id(teff0,logg0,feh,vvcrit,model_wd,model_ifmr,
-                                    path) 
-        
-        #Interpolates models for cooling age and main sequence age
-        cooling_models = get_cooling_model(model_wd)
-        isochrone_model = get_isochrone_model(feh=feh,vvcrit=vvcrit)
-        
-        models0 = [model_ifmr,isochrone_model,cooling_models,wd_path_id]
-        
         #If it doesn't exist, creates a folder to save the plots
         if not os.path.exists(path):
-            os.makedirs(path)           
-        #Check if file exists and remove if it does so if can be filled again
-        if os.path.exists(wd_path_id+'.txt'):
-            os.remove(wd_path_id+'.txt')
+            os.makedirs(path) 
+
+        results = Table(names=('ms_age_median','ms_age_err_low',
+                               'ms_age_err_high','cooling_age_median',
+                               'cooling_age_err_low','cooling_age_err_high',
+                               'total_age_median','total_age_err_low',
+                               'total_age_err_high','initial_mass_median',
+                               'initial_mass_err_low',
+                               'initial_mass_err_high','final_mass_median',
+                               'final_mass_err_low','final_mass_err_high'))
         
-        results = calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
-                                       models0, init_params, comparison,
-                                       high_perc, low_perc,datatype,
-                                       nburn_in,n_calc_auto_corr,
-                                       n_idep_samples)
+        if not isinstance(teff0, np.ndarray):
+            teff0 = np.array([teff0])
+            e_teff0 = np.array([e_teff0])
+            logg0 = np.array([logg0])
+            e_logg0 = np.array([e_logg0])
+        for teff0_i,e_teff0_i,logg0_i,e_logg0_i in zip(teff0,e_teff0,
+                                                       logg0,e_logg0):
+            #Set name of path and wd models to identif results
+            wd_path_id = get_wd_path_id(teff0,logg0,feh,vvcrit,model_wd,
+                                        model_ifmr,path) 
+            
+            #Interpolates models for cooling age and main sequence age
+            cooling_models = get_cooling_model(model_wd)
+            isochrone_model = get_isochrone_model(feh=feh,vvcrit=vvcrit)
+            
+            models0 = [model_ifmr,isochrone_model,cooling_models,wd_path_id]
+                      
+            #Check if file exists and remove if it does so if can be filled 
+            #again
+            if os.path.exists(wd_path_id+'.txt'):
+                os.remove(wd_path_id+'.txt')
+            
+            results_i = calc_bayesian_wd_age(teff0_i,e_teff0_i,
+                                             logg0_i,e_logg0_i,
+                                             models0, init_params, comparison,
+                                             high_perc, low_perc,datatype,
+                                             nburn_in,n_calc_auto_corr,
+                                             n_idep_samples)
+            results.add_row(results_i)
+            
     elif(method=='freq'):
         results = calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,
                                    model_wd,feh,vvcrit,
