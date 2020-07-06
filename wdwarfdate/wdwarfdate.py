@@ -16,7 +16,7 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                 datatype='yr',
                 path='results/',
                 nburn_in = 1000,n_calc_auto_corr = 10000,
-                n_idep_samples = 1000,n_mc=2000,
+                n_indep_samples = 1000,n_mc=2000,
                 return_distributions=False):
     
     """
@@ -47,15 +47,16 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                  log10 cooling age, delta m.
     high_perc : scalar. Percentage at which the high errors will be calculated. 
     low_perc : scalar. Percentage at which the low errors will be calculated. 
-    datatype : string. 'yr' or 'Gyr'. Units in which the results will be 
-               output.
+    datatype : string. 'yr', 'Gyr' or 'log'. Units in which the results will be 
+               output. Make sure that the comparison array has the same units,
+               if you include one.
     path : string. Name of the folder where all the plots and distribution file
            will be save. If it doesn't exist, the code will create it.
     nburn_in : scalar. Number of steps for the burn in. Only useful in 
                Bayesian mode.
     n_calc_auto_corr : scalar. Number of steps taken to calculate 
                        auto-correlation time. Only useful in Bayesian mode.
-    n_idep_samples : scalar. Number of independent samples. The MCMC will run
+    n_indep_samples : scalar. Number of independent samples. The MCMC will run
                      for n_idep_samples*n_calc_auto_corr steps. Only useful in 
                      Bayesian mode.
     n_mc : scalar. Length of the distribution for each parameter. Only 
@@ -86,10 +87,13 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
             e_teff0 = np.array([e_teff0])
             logg0 = np.array([logg0])
             e_logg0 = np.array([e_logg0])
-        for teff0_i,e_teff0_i,logg0_i,e_logg0_i in zip(teff0,e_teff0,
-                                                       logg0,e_logg0):
+            
+        for teff0_i,e_teff0_i,logg0_i,e_logg0_i,c_i in zip(teff0,e_teff0,
+                                                           logg0,e_logg0,
+                                                           comparison):
+            print('Running teff:{} logg:{}'.format(teff0_i,logg0_i))
             #Set name of path and wd models to identif results
-            wd_path_id = get_wd_path_id(teff0,logg0,feh,vvcrit,model_wd,
+            wd_path_id = get_wd_path_id(teff0_i,logg0_i,feh,vvcrit,model_wd,
                                         model_ifmr,path) 
             
             #Interpolates models for cooling age and main sequence age
@@ -105,16 +109,16 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
             
             results_i = calc_bayesian_wd_age(teff0_i,e_teff0_i,
                                              logg0_i,e_logg0_i,
-                                             models0, init_params, comparison,
+                                             models0, init_params, c_i,
                                              high_perc, low_perc,datatype,
                                              nburn_in,n_calc_auto_corr,
-                                             n_idep_samples)
+                                             n_indep_samples)
             results.add_row(results_i)
             
     elif(method=='freq'):
         results = calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,
-                                   model_wd,feh,vvcrit,
-                                   model_ifmr,
+                                   model_wd,feh,vvcrit,model_ifmr,
+                                   high_perc,low_perc,datatype,comparison,path,
                                    return_distributions=return_distributions)
     return results
         
@@ -122,7 +126,7 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
 def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
                          models0, init_params, comparison,
                          high_perc, low_perc,datatype,
-                         nburn_in,n_calc_auto_corr,n_idep_samples):
+                         nburn_in,n_calc_auto_corr,n_indep_samples):
     '''
     Calculates percentiles for main sequence age, cooling age, total age, 
     final mass and initial mass of a white dwarf with teff0 and logg0. 
@@ -139,7 +143,7 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
                             init_params, comparison,
                             nburn_in=nburn_in,
                             n_calc_auto_corr=n_calc_auto_corr,
-                            n_idep_samples=n_idep_samples)
+                            n_indep_samples=n_indep_samples)
 
     ln_ms_age = flat_samples[:,0]
     ln_cooling_age = flat_samples[:,1]
@@ -159,42 +163,54 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
     results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, 
                                initial_mass, final_mass, high_perc, 
                                low_perc, datatype=datatype)
-    
-    plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, 
-                       ln_total_age, initial_mass, final_mass, 
-                       high_perc, low_perc, 
-                       comparison = comparison, 
-                       name = wd_path_id)
 
+    if(datatype=='yr'):
+        plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, 
+                           ln_total_age, initial_mass, final_mass, 
+                           high_perc, low_perc, datatype,
+                           comparison = np.log10(comparison), 
+                           name = wd_path_id)
+    elif(datatype=='Gyr'):
+        plot_distributions(teff0, logg0, (10**ln_ms_age)/1e9, 
+                           (10**ln_cooling_age)/1e9, 
+                           (10**ln_total_age)/1e9, initial_mass, final_mass, 
+                           high_perc, low_perc, datatype,
+                           comparison = comparison, 
+                           name = wd_path_id)
+    elif(datatype=='log'):
+        plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, 
+                           ln_total_age, initial_mass, final_mass, 
+                           high_perc, low_perc, datatype,
+                           comparison = comparison, 
+                           name = wd_path_id)        
     return results
 
-def calc_wd_age_freq(teff,e_teff,logg,e_logg,n_mc=2000,
-                     model_wd='DA',feh='p0.00',vvcrit='0.0',
-                     model_ifmr = 'Cummings_2018_MIST',
-                     return_distributions=False):
+def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
+                     model_ifmr,high_perc,low_perc,datatype,comparison,path,
+                     return_distributions):
     '''
     Calculated white dwarfs ages with a frequentist approch. Starts from normal 
     dristribution of teff and logg based on the errors and passes the full
     distribution through the same process to get a distribution of ages.
     '''
     
-    if(not isinstance(teff,np.ndarray)):
-        teff = np.array([teff])
-        e_teff = np.array([e_teff])
-        logg = np.array([logg])
-        e_logg = np.array([e_logg])
+    if(not isinstance(teff0,np.ndarray)):
+        teff0 = np.array([teff0])
+        e_teff0 = np.array([e_teff0])
+        logg0 = np.array([logg0])
+        e_logg0 = np.array([e_logg0])
     
-    N = len(teff)
+    N = len(teff0)
     
     teff_dist,logg_dist = [],[]
     
     for i in range(N):
-        if(np.isnan(teff[i]+e_teff[i]+logg[i]+e_logg[i])):
+        if(np.isnan(teff0[i]+e_teff0[i]+logg0[i]+e_logg0[i])):
             teff_dist.append(np.nan)
             logg_dist.append(np.nan)
         else:
-            teff_dist.append(np.random.normal(teff[i],e_teff[i],n_mc))
-            logg_dist.append(np.random.normal(logg[i],e_logg[i],n_mc))
+            teff_dist.append(np.random.normal(teff0[i],e_teff0[i],n_mc))
+            logg_dist.append(np.random.normal(logg0[i],e_logg0[i],n_mc))
     teff_dist,logg_dist = np.array(teff_dist),np.array(logg_dist)
         
     cooling_age_dist,final_mass_dist = calc_cooling_age(teff_dist,logg_dist,
@@ -218,27 +234,32 @@ def calc_wd_age_freq(teff,e_teff,logg,e_logg,n_mc=2000,
     
     results = Table()
     
-    median,high_err,low_err = calc_dist_percentiles(final_mass_dist)
+    median,high_err,low_err = calc_dist_percentiles(final_mass_dist,'none',
+                                                    high_perc,low_perc)
     results['final_mass_median'] = median
     results['final_mass_err_high'] = high_err
     results['final_mass_err_low'] = low_err
     
-    median,high_err,low_err = calc_dist_percentiles(initial_mass_dist)
+    median,high_err,low_err = calc_dist_percentiles(initial_mass_dist,'none',
+                                                    high_perc,low_perc)
     results['initial_mass_median'] = median
     results['initial_mass_err_high'] = high_err
     results['initial_mass_err_low'] = low_err
 
-    median,high_err,low_err = calc_dist_percentiles(cooling_age_dist)    
+    median,high_err,low_err = calc_dist_percentiles(cooling_age_dist,datatype,
+                                                    high_perc,low_perc) 
     results['cooling_age_median'] = median
     results['cooling_age_err_high'] = high_err
     results['cooling_age_err_low'] = low_err
 
-    median,high_err,low_err = calc_dist_percentiles(ms_age_dist)    
+    median,high_err,low_err = calc_dist_percentiles(ms_age_dist,datatype,
+                                                    high_perc,low_perc)    
     results['ms_age_median'] = median
     results['ms_age_err_high'] = high_err
     results['ms_age_err_low'] = low_err
     
-    median,high_err,low_err = calc_dist_percentiles(total_age_dist)    
+    median,high_err,low_err = calc_dist_percentiles(total_age_dist,datatype,
+                                                    high_perc,low_perc)    
     results['total_age_median'] = median
     results['total_age_err_high'] = high_err
     results['total_age_err_low'] = low_err
@@ -246,15 +267,60 @@ def calc_wd_age_freq(teff,e_teff,logg,e_logg,n_mc=2000,
     if(return_distributions):
         results['final_mass_dist'] = final_mass_dist
         results['initial_mass_dist'] = initial_mass_dist
-        results['cooling_age_dist'] = cooling_age_dist
-        results['ms_age_dist'] = ms_age_dist
-        results['total_age_dist'] = total_age_dist
+        if(datatype=='yr'):
+            results['cooling_age_dist'] = cooling_age_dist
+            results['ms_age_dist'] = ms_age_dist
+            results['total_age_dist'] = total_age_dist
+        elif(datatype=='Gyr'):
+            results['cooling_age_dist'] = cooling_age_dist/1e9
+            results['ms_age_dist'] = ms_age_dist/1e9
+            results['total_age_dist'] = total_age_dist/1e9
+        elif(datatype=='log'):
+            results['cooling_age_dist'] = np.log10(cooling_age_dist)
+            results['ms_age_dist'] = np.log10(ms_age_dist)
+            results['total_age_dist'] = np.log10(total_age_dist)
+
+
+    
+    for x1,x2,x3,x4,x5,x6,x7,x8 in zip(teff0,logg0,ms_age_dist,
+                                       cooling_age_dist,total_age_dist,
+                                       initial_mass_dist,final_mass_dist,
+                                       comparison):
+        wd_path_id = get_wd_path_id(x1,x2,feh,vvcrit,model_wd,
+                                    model_ifmr,path) 
+        if(datatype=='yr'):
+            plot_distributions(x1,x2,x3,x4,x5,
+                               x6,x7,high_perc, low_perc, datatype,
+                               comparison=x8, name = wd_path_id + '_freq')
+        elif(datatype=='Gyr'):
+            plot_distributions(x1,x2,x3/1e9,x4/1e9,x5/1e9,
+                               x6,x7,high_perc, low_perc, datatype,
+                               comparison=x8, name = wd_path_id + '_freq')
+        elif(datatype=='log'):
+            plot_distributions(x1,x2,np.log10(x3),np.log10(x4),np.log10(x5),
+                               x6,x7,high_perc, low_perc, datatype,
+                               comparison=x8, name = wd_path_id + '_freq')
+    
     return results
 
-def calc_dist_percentiles(dist):
-    median = np.array([np.nanpercentile(x,50) for x in dist])
-    h=np.array([np.nanpercentile(x,84.1)-np.nanpercentile(x,50) for x in dist])
-    l=np.array([np.nanpercentile(x,50)-np.nanpercentile(x,15.9) for x in dist])
+def calc_dist_percentiles(dist,datatype,high_perc,low_perc):
+    if(datatype=='yr' or datatype=='none'):
+        median = np.array([np.nanpercentile(x,50) for x in dist])
+        h=[np.nanpercentile(x,high_perc)-np.nanpercentile(x,50) for x in dist]
+        l=[np.nanpercentile(x,50)-np.nanpercentile(x,low_perc) for x in dist]
+        h,l = np.array(h),np.array(l)
+    elif(datatype=='Gyr'):
+        dist1 = dist/1e9
+        median = np.array([np.nanpercentile(x,50) for x in dist1])
+        h=[np.nanpercentile(x,high_perc)-np.nanpercentile(x,50) for x in dist1]
+        l=[np.nanpercentile(x,50)-np.nanpercentile(x,low_perc) for x in dist1]
+        h,l = np.array(h),np.array(l)
+    elif(datatype=='log'):
+        dist1 = np.log10(dist)
+        median = np.array([np.nanpercentile(x,50) for x in dist1])
+        h=[np.nanpercentile(x,high_perc)-np.nanpercentile(x,50) for x in dist1]
+        l=[np.nanpercentile(x,50)-np.nanpercentile(x,low_perc) for x in dist1]
+        h,l = np.array(h),np.array(l)
     return median,h,l
 
 def get_wd_path_id(teff0,logg0,feh,vvcrit,model_wd,model_ifmr,path):

@@ -76,39 +76,49 @@ def calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass,
             initial_mass_median,initial_mass_err_low,initial_mass_err_high,
             final_mass_median,final_mass_low,final_mass_high]
 
-def plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, ln_total_age, 
+def plot_distributions(teff0, logg0, ms_age,cooling_age,total_age, 
                        initial_mass, final_mass, high_perc, low_perc, 
-                       comparison=[], name = 'run'):
+                       datatype,comparison=[], name = 'run'):
+
+    results = calc_percentiles(ms_age, cooling_age, total_age, 
+                               initial_mass, final_mass, high_perc, low_perc)
     
-    results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, 
-                               final_mass, high_perc, low_perc, datatype='log')
     title = r"${{{0:.2f}}}_{{-{1:.2f}}}^{{+{2:.2f}}}$"
     f, (ax1,ax2,ax3,ax4,ax5) = plt.subplots(1,5, figsize=(12,3))
-    ax1.hist(ln_ms_age,bins=20)
+    ax1.hist(ms_age,bins=20)
     ax1.axvline(x=results[0],color='k')
     ax1.axvline(x=results[0]-results[1],color='k',linestyle='--')
     ax1.axvline(x=results[0]+results[2],color='k',linestyle='--')
     if(len(comparison) != 0):
         ax1.axvline(x=comparison[0],color='r')
-    ax1.set_xlabel(r'$\log _{10}($MS Age$/{\rm yr})$')
+    if(datatype=='Gyr'):
+        ax1.set_xlabel('MS Age (Gyr)')
+    elif(datatype=='log' or datatype=='yr'):
+        ax1.set_xlabel(r'$\log _{10}($MS Age$/{\rm yr})$')
     ax1.set_title(title.format(results[0],results[1],results[2]))
     
-    ax2.hist(ln_cooling_age,bins=20)
+    ax2.hist(cooling_age,bins=20)
     ax2.axvline(x=results[3],color='k')
     ax2.axvline(x=results[3]-results[4],color='k',linestyle='--')
     ax2.axvline(x=results[3]+results[5],color='k',linestyle='--')
     if(len(comparison) != 0):
         ax2.axvline(x=comparison[1],color='r')
-    ax2.set_xlabel(r'$\log _{10}($Cooling Age$/{\rm yr})$')
+    if(datatype=='Gyr'):
+        ax2.set_xlabel('Cooling Age (Gyr)')
+    elif(datatype=='log' or datatype=='yr'):
+        ax2.set_xlabel(r'$\log _{10}($Cooling Age$/{\rm yr})$')
     ax2.set_title(title.format(results[3],results[4],results[5]))
     
-    ax3.hist(ln_total_age,bins=20)
+    ax3.hist(total_age,bins=20)
     ax3.axvline(x=results[6],color='k')
     ax3.axvline(x=results[6]-results[7],color='k',linestyle='--')
     ax3.axvline(x=results[6]+results[8],color='k',linestyle='--')
     if(len(comparison) != 0):
         ax3.axvline(x=comparison[2],color='r')
-    ax3.set_xlabel(r'$\log _{10}($Total$/{\rm yr})$')
+    if(datatype=='Gyr'):
+        ax3.set_xlabel('Total Age (Gyr)')
+    elif(datatype=='log' or datatype=='yr'):
+        ax3.set_xlabel(r'$\log _{10}($Total$/{\rm yr})$')
     ax3.set_title(title.format(results[6],results[7],results[8]))
     
     ax4.hist(initial_mass,bins=20)

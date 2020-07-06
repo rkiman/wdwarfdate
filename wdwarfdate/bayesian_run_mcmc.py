@@ -59,7 +59,7 @@ def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=100):
     return axis, post_list, post_ms_age, post_cooling_age, init_max_like
 
 def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, 
-             init_params, comparison,nburn_in,n_calc_auto_corr,n_idep_samples):
+             init_params, comparison,nburn_in,n_calc_auto_corr,n_indep_samples):
     '''
     Starting from the maximum likelihood ages (main sequence age and cooling
     age), samples the posterior to get the likelihood evaluations of the rest 
@@ -68,7 +68,6 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
 
     _,_,_,wd_path_id = models0
     ndim, nwalkers = 3, 70 #nwalkers > 2*ndim
-    
     
     #Obtain the maximum likelihood parameters if they are not given.
     #if(len(init_params)==0 and plot==False):
@@ -81,7 +80,6 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
                    + np.random.uniform(-.05,.05,3) for i in range(nwalkers)])
     
     #Initialize sampler
-    
     sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_posterior_prob,
                                     args=[teff0,e_teff0,logg0,e_logg0,models0])
     
@@ -102,14 +100,12 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
     os.remove(save_likelihoods_file)
     
     #Run mcmc to calculate parameters
-    p,_,_ = sampler.run_mcmc(p, n_idep_samples*autoc_time);
+    p,_,_ = sampler.run_mcmc(p, n_indep_samples*autoc_time);
     
     #Obtain chain of samples
     chain = sampler.chain[:,500:,:]
     flat_samples = chain.reshape((-1,ndim))
-    
     plot_results_mcmc(chain,ndim,wd_path_id)
-
     return flat_samples
 
 def plot_results_mcmc(chain,ndim,wd_path_id):
