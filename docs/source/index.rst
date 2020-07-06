@@ -2,6 +2,7 @@
 Documentation wdwarfdate
 ========================
 
+To calculate white dwarf ages
 
 .. Contents:
 
