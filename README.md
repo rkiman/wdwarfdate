@@ -34,27 +34,14 @@ Example usage
     t_tot = np.array([8.755874855672491,8.755874855672491])
 ```
 
-*wdwarfdate* runs one star at a time, so we have to loop over the stars we have
+To run *wdwarfdate* we just call the function that calculates ages and choose which method we want to use: 'bayesian' of 'freq'. The 'freq' method is much more faster so it is recommended to have a first approximation of the ages. The 'bayesian' method produces a better estimation of the errors.
 
 ```python
-    N = len(teff)
-    results = np.ones((N,15))*np.nan
-    model_ifmr = 'Cummings_2018_MIST'
-    for i in range(N):
-        data_i = [t_ms[i],t_cool[i],t_tot[i],m_i[i],m_f[i]]
-        results_i = wdwarfdate.calc_bayesian_wd_age(teff[i],teff_err[i],
-                                                    logg[i],logg_err[i],
-                                                    n_mc=1000,
-                                                    model_wd='DA', feh='p0.00',
-                                                    vvcrit='0.0', 
-                                                    model_ifmr = model_ifmr,
-                                                    comparison = data_i,  
-                                                    n = 100, 
-                                                    high_perc = 84, low_perc = 16, 
-                                                    plot = True, 
-                                                    save_dist = True,
-                                                    datatype = 'Gyr')
-    results[i,:] = results_i
+data_comparison = [[t_ms[i],t_cool[i],t_tot[i],m_i[i],m_f[i]] for i in range(len(teff))]
+results = wdwarfdate.calc_wd_age(teff,teff_err,logg,logg_err,method='bayesian',
+                                                        comparison = data_comparison,
+                                                        nburn_in = 100,n_calc_auto_corr = 100,
+                                                        n_indep_samples = 100)
 ```
 
 *wdwarfdate* allows you to select which models you want to use for the white dwarfs: the initial-final mass relation, DA or DB, and the parameter for the isochrone. 

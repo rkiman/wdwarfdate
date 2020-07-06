@@ -1,10 +1,82 @@
 import numpy as np
-#import matplotlib.pyplot as plt
+
+def ifmr_bayesian(initial_mass,ifmr_model,min_initial_mass_mist,
+                  max_initial_mass_mist):
+    '''
+    Calculates a final mass from an initial mass using the initial-final mass
+    model chosen. This function is used in the 'bayesian' method.
+    
+    Parameters
+    ----------
+    initial_mass : float. Initial mass of the progenitor of the white dwarf.
+    ifmr_model : string. Initial to final mass relation model. Can be 
+                 'Cummings_2018_MIST', 'Cummings_2018_PARSEC' 
+                 or 'Salaris_2009'.
+    min_initial_mass_mist : float. Minimum initial mass in the MIST isochrone.
+    max_initial_mass_mist : float. Maximum initial mass in the MIST isochrone.
+    
+    Returns
+    -------
+    final_mass : float. Final mass of the white dwarf calculated using the 
+                 initial to final mass model chosen.
+    '''
+    #Initialize variables
+    initial_mass = np.asarray(initial_mass)
+    final_mass = np.copy(initial_mass)*np.nan
+    final_mass = np.asarray(final_mass)
+    
+    if(ifmr_model == 'Cummings_2018_MIST'):
+        #Initial-Final mass relation from 
+        #Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
+        #based on MIST isochrones
+        mask1 = (min_initial_mass_mist <= initial_mass) * (initial_mass < 2.85)
+        mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
+        mask3 = (3.60 <= initial_mass) * (initial_mass < max_initial_mass_mist)
+        final_mass[mask1] = initial_mass[mask1] * 0.08 + 0.489
+        final_mass[mask2] = initial_mass[mask2] * 0.187 + 0.184
+        final_mass[mask3] = initial_mass[mask3] * 0.107 + 0.471
+        
+    elif(ifmr_model == 'Cummings_2018_PARSEC'):
+        #Initial-Final mass relation from 
+        #Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
+        #based on PARSEC isochrones
+        mask1 = (0.87 <= initial_mass) * (initial_mass < 2.8)
+        mask2 = (2.8 <= initial_mass) * (initial_mass < 3.65)
+        mask3 = (3.65 <= initial_mass) * (initial_mass < 8.20)
+        final_mass[mask1] = initial_mass[mask1] * 0.0873 + 0.476
+        final_mass[mask2] = initial_mass[mask2] * 0.181 + 0.210
+        final_mass[mask3] = initial_mass[mask3] * 0.0835 + 0.565
+    elif(ifmr_model == 'Salaris_2009'):
+        #Initial-Final mass relation from 
+        #Salaris, M., et al., Astrophys. J. 692, 1013–1032 (2009).
+        
+        mask1 = (1.7 <= initial_mass) * (initial_mass < 4)
+        mask2 = (4 <= initial_mass) 
+        final_mass[mask1] = initial_mass[mask1] * 0.134 + 0.331
+        final_mass[mask2] = initial_mass[mask2] * 0.047 + 0.679   
+    return final_mass
+
 
 def calc_initial_mass(model_ifmr,final_mass_dist,n_mc):
     '''
-    Uses different initial-final mass relations
-    to calculte progenitor's mass from the white dwarf mass.
+    Uses different initial-final mass relations to calculte progenitor's mass 
+    from the white dwarf mass (final mass). This function is used in the 
+    'freq' method.
+    
+    Parameters
+    ----------
+    model_ifmr : string. Initial to final mass relation model. Can be 
+                 'Cummings_2018_MIST', 'Cummings_2018_PARSEC' 
+                 or 'Salaris_2009'.
+    final_mass_dist : list of arrays. List of final mass distributions 
+                      for each white dwarf.
+    n_mc : scalar, arraya. Total number of white dwarf.
+    
+    
+    Returns
+    -------
+    initial_mass_dist : list of arrays. List of initial mass distributions 
+                        for each white dwarf progenitor.
     '''        
     initial_mass_dist = []
     
