@@ -9,7 +9,8 @@ To calculate white dwarf ages
 Basic usage
 -----------
 
-::
+.. code-block:: python
+
     import wdwarfdate
 
     #Define data for the white dwarf
