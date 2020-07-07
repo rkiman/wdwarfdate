@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from wdwarfdate.bayesian_age import ln_posterior_prob, get_isochrone_model
-from wdwarfdate.bayesian_age import get_cooling_model
+from wdwarfdate.bayesian_age import ln_posterior_prob
+from wdwarfdate.ms_age import get_isochrone_model
+from wdwarfdate.cooling_age import get_cooling_model
 import numpy as np
 
 def test_ln_posterior_prob():
