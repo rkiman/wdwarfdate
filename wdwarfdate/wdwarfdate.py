@@ -1,10 +1,9 @@
 import numpy as np
 from astropy.table import Table
 import os
-from .cooling_age import calc_cooling_age
+from .cooling_age import calc_cooling_age,get_cooling_model
 from .ifmr import calc_initial_mass
-from .ms_age import calc_ms_age
-from .bayesian_age import get_cooling_model, get_isochrone_model
+from .ms_age import calc_ms_age,get_isochrone_model
 from .bayesian_run_mcmc import run_mcmc
 from .extra_func import calc_percentiles, plot_distributions
 
@@ -87,7 +86,9 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
             e_teff0 = np.array([e_teff0])
             logg0 = np.array([logg0])
             e_logg0 = np.array([e_logg0])
-            
+        
+        if(comparison==[]):
+            comparison = np.ones(len(teff0))*np.nan
         for teff0_i,e_teff0_i,logg0_i,e_logg0_i,c_i in zip(teff0,e_teff0,
                                                            logg0,e_logg0,
                                                            comparison):
@@ -214,7 +215,7 @@ def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
     teff_dist,logg_dist = np.array(teff_dist),np.array(logg_dist)
         
     cooling_age_dist,final_mass_dist = calc_cooling_age(teff_dist,logg_dist,
-                                                        n_mc,N,model=model_wd)
+                                                        N,model=model_wd)
     
     initial_mass_dist = calc_initial_mass(model_ifmr,final_mass_dist,n_mc)
     

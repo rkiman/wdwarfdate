@@ -5,7 +5,7 @@ import pkg_resources
 def get_cooling_model(model_wd):  
     '''
     Interpolates a function which calculates effective temperature and 
-    surface temperature from final mass
+    surface gravity from final mass
     and cooling age. To interpolate uses cooling tracks 
     from Bergeron et al. (1995)
     available online http://www.astro.umontreal.ca/∼bergeron/CoolingModels/.
@@ -64,7 +64,7 @@ def calc_cooling_age(teff_dist,logg_dist,n_mc,N,model):
     ----------
     teff_dist : list of arrays. List of effective temperature distributions 
                 for each white dwarf.
-    logg_dist : list of arrays. List of surface temperature distributions 
+    logg_dist : list of arrays. List of surface gravity distributions 
                 for each white dwarf.
     N : scalar, arraya. Total number of white dwarf.
     model : string. Spectral type of the white dwarf 'DA' or 'DB'.
