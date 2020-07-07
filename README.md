@@ -2,7 +2,7 @@
 wdwarfdate
 ==========
 
-*wdwarfdate* is an open source code which estimates ages of white dwarf in a bayesian framework. *wdwarfdate* runs a chain a models to estimate ages of white dwarfs and their uncertainties from an effective temperature and a surface gravity. Checkout the documentation for *wdwarfdate* [here](wdwarfdate.readthedocs.io) (under construction).
+*wdwarfdate* is an open source code which estimates ages of white dwarf in a bayesian framework. *wdwarfdate* runs a chain a models to estimate ages of white dwarfs and their uncertainties from an effective temperature and a surface gravity. Checkout the documentation for *wdwarfdate* [here](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
 
 
 Installation
@@ -55,7 +55,7 @@ results_freq = wdwarfdate.calc_wd_age(teffs,teffs_err,loggs,loggs_err,
                                       method='freq', datatype='Gyr')
 ```
 
-*wdwarfdate* allows us to select which models we want to use for the white dwarfs: the initial-to-final mass relation, DA or DB, and the parameter for the isochrone. As we did not specified the models in this example, the output is going to be calculated assing these are DA white dwarfs, using the Cummings et al. 2018 MIST initial-to-final mass relation and assuming solar metallicity for the progenitor star. Also with the *datatype* option we can select the units of the resulting ages. 
+*wdwarfdate* allows us to select which models we want to use for the white dwarfs: the initial-to-final mass relation, DA or DB, and the parameter for the isochrone. As we did not specified the models in this example, the outputs are going to be estimated assuming these are DA white dwarfs, using the Cummings et al. 2018 MIST initial-to-final mass relation and assuming solar metallicity for the progenitor star. Also with the *datatype* option we can select the units of the resulting ages. 
 
 The output of this function will be an astropy Table with one row for each teff and logg given and the following columns:
 
@@ -89,7 +89,7 @@ When we run the *freq* method, *wdwarfdate* will save one file:
 
 1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_freq_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age), but obtained with the *freq* method described above.
 
-For more explanation and examples checkout the [documentation](wdwarfdate.readthedocs.io).
+For more explanation and examples checkout the [documentation](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
 
 
 Citation
