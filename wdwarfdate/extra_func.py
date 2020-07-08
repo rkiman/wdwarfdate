@@ -141,4 +141,5 @@ def plot_distributions(teff0, logg0, ms_age,cooling_age,total_age,
     
     plt.tight_layout()
     plt.savefig(name + '_distributions.png',dpi=300)
+    plt.show()
     plt.close(f)

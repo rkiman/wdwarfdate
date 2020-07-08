@@ -53,7 +53,7 @@ def get_cooling_model(model_wd):
 
     return f_teff,f_logg,model_age,model_mass
 
-def calc_cooling_age(teff_dist,logg_dist,n_mc,N,model):
+def calc_cooling_age(teff_dist,logg_dist,N,model):
     '''
     Calculates cooling age and final mass of the white dwarf using cooling
     tracks from from Bergeron et al. (1995)
