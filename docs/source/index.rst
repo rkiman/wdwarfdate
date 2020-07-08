@@ -1,6 +1,6 @@
 
-Documentation wdwarfdate
-========================
+wdwarfdate
+==========
 
 To calculate white dwarf ages
 
@@ -38,19 +38,8 @@ User Guide
    :maxdepth: 2
 
    user/install
+   models/models_included
 
-
-Models Included
----------------
-
-In order to estimate an age for a white dwarf a chain of models have to be used. Here are the models included in *wdwarfdate*.
-
-.. toctree::
-   :maxdepth: 2
-
-   models/ifmr
-   models/ms
-   models/coolingage
 
 Tutorials
 ---------
