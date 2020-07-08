@@ -13,12 +13,17 @@ To install *wdwarfdate* you can do it from the github source:
 Dependencies
 ------------
 
-The dependencies of *wdwarfdate* are
+To run *wdwarfdate* the following packages are needed: 
 `NumPy <http://www.numpy.org/>`_,
-`emcee3 <https://emcee.readthedocs.io/en/latest/>`_,
+`astropy <https://www.astropy.org/>`_,
+`matplotlib <https://matplotlib.org/>`_,
+`emcee <https://emcee.readthedocs.io/en/latest/>`_,
+`corner <https://corner.readthedocs.io/en/latest/>`_,
+`SciPy <https://www.scipy.org/>`_ and
+`daft <https://pypi.org/project/daft/>`_.
 
-These can be installed using pip:
+These can be installed with the following line:
 
 .. code-block:: bash
 
-    pip install numpy pandas h5py numba "emcee==3.0rc2" tqdm isochrones
+    pip install numpy astropy matplotlib emcee corner scipy daft
