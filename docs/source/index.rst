@@ -22,7 +22,7 @@ Let's set up two white dwarfs with their effective temperature and surface gravi
     loggs = np.array([8.16,8.526])
     loggs_err = np.array([0.084,0.126])
 
-To estimate the ages of these two white dwarfs we need to use :func:`wdwarfdate.calc_wd_age`. This function will take the effective temperature and surface gravity and use one of two methods to estimate the ages: *bayesian* or *freq*. The *bayesian* method will run a Markov Chain Monte Carlo using [*emcee*](https://emcee.readthedocs.io/en/stable/) until convergence. The *freq* method will generate a gaussian distribution for *teff* and *logg* using the uncertainties as starndard deviation, and pass the full distribution through a chain of models to calculate the total age of the white dwarfs and other parameters described below. To calculate the ages of the two white dwarfs we initiated above using the *bayesian* method we can do something like
+To estimate the ages of these two white dwarfs we need to use :func:`wdwarfdate.calc_wd_age`. This function will take the effective temperature and surface gravity and use one of two methods to estimate the ages: *bayesian* or *freq*. The *bayesian* method will run a Markov Chain Monte Carlo using `emcee <https://emcee.readthedocs.io/en/latest/>`_, until convergence. The *freq* method will generate a gaussian distribution for *teff* and *logg* using the uncertainties as starndard deviation, and pass the full distribution through a chain of models to calculate the total age of the white dwarfs and other parameters described below. To calculate the ages of the two white dwarfs we initiated above using the *bayesian* method we can do something like
 
 .. code-block:: python
 
@@ -66,7 +66,7 @@ When we run the *bayesian* method, *wdwarfdate* will also save four files per st
 
 3. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age).
 
-4. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corr_time.png which contains the result of the autocorrelation time as explained in the [tutorial](https://emcee.readthedocs.io/en/stable/tutorials/autocorr/) by Dan Foreman-Mackey.
+4. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corr_time.png which contains the result of the autocorrelation time as explained in the `tutorial <https://emcee.readthedocs.io/en/stable/tutorials/autocorr/>`_ by Dan Foreman-Mackey.
 
 When we run the *freq* method, *wdwarfdate* will save one file:
 
@@ -79,6 +79,7 @@ User Guide
 
 .. toctree::
    :maxdepth: 2
+   :caption: User Guide
 
    user/install
    user/models_included
@@ -88,6 +89,12 @@ Tutorials
 ---------
 
 Some tutorials on how to use the code
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials
+
+   tutorials/freq_method.ipynb
 
 Citation
 --------
