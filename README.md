@@ -41,7 +41,7 @@ Getting right to it, let's make and example on how to estimate the ages of a cou
 
 ```
 
-To run *wdwarfdate* we need call the function that calculates ages and choose which method we want to use: *bayesian* of *freq*, as shown below. The *bayesian* method will run a Markov Chain Monte Carlo using *emcee* (see [Documentation](https://emcee.readthedocs.io/en/stable/)) until convergence. The *freq* method will generate a gaussian distribution for *teff* and *logg* using the uncertainties as starndard deviation, and pass the full distribution through a chain of models to calculate the total age of the white dwarfs and other parameters described below. To calculate the ages of the two white dwarfs we initiated above using the *bayesian* method we can do something like
+To run *wdwarfdate* we need call the function that calculates ages and choose which method we want to use: *bayesian* of *freq*, as shown below. The *bayesian* method will run a Markov Chain Monte Carlo using [*emcee*](https://emcee.readthedocs.io/en/stable/) until convergence. The *freq* method will generate a gaussian distribution for *teff* and *logg* using the uncertainties as starndard deviation, and pass the full distribution through a chain of models to calculate the total age of the white dwarfs and other parameters described below. To calculate the ages of the two white dwarfs we initiated above using the *bayesian* method we can do something like
 
 ```python
 results_bayes = wdwarfdate.calc_wd_age(teffs,teffs_err,loggs,loggs_err,
@@ -93,7 +93,7 @@ For more explanation and examples checkout the [documentation](https://wdwarfdat
 
 
 Citation
-========
+--------
 
 If you use *wdwarfdate* in your reaserch, there will be a paper to cite: Kiman et al. in prep.
 
