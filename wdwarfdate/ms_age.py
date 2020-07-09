@@ -78,10 +78,13 @@ def calc_ms_age(initial_mass_dist,feh,vvcrit):
     #Replace with nan all the values of the initial_mass not included in 
     #the interpolation model
     initial_mass_dist_copy = np.copy(initial_mass_dist)
+    mask_nan = np.isnan(initial_mass_dist_copy)
+    initial_mass_dist_copy[mask_nan] = 2
     mask = np.logical_or(np.min(model_initial_mass) > initial_mass_dist_copy,
                          np.max(model_initial_mass) < initial_mass_dist_copy)
     initial_mass_dist_copy[mask] = np.nan
-
+    initial_mass_dist_copy[mask_nan] = np.nan
+    
     #Use the interpolated model to calculate main sequence age
     ms_age_dist = []
     for initial_mass_dist_i in initial_mass_dist_copy:

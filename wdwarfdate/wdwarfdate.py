@@ -16,7 +16,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                 path='results/',
                 nburn_in = 1000,n_calc_auto_corr = 10000,
                 n_indep_samples = 1000,n_mc=2000,
-                return_distributions=False):
+                return_distributions=False,
+                plot=False):
     
     """
     Estimates ages for white dwarfs.
@@ -63,6 +64,9 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
     return_distributions : True or False. Adds columns to the outputs with the
                            distributions of each parameter. Only useful in 
                            Freq mode.
+    plot: True or Flase. If True, plots and saves the figures describing the 
+          result in the path given.
+    
     Returns
     -------
     results : astropy Table with the results for each white dwarf parameter.
@@ -120,7 +124,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
         results = calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,
                                    model_wd,feh,vvcrit,model_ifmr,
                                    high_perc,low_perc,datatype,comparison,path,
-                                   return_distributions=return_distributions)
+                                   return_distributions=return_distributions,
+                                   plot=plot)
     return results
         
 
@@ -188,7 +193,7 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
 
 def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
                      model_ifmr,high_perc,low_perc,datatype,comparison,path,
-                     return_distributions):
+                     return_distributions,plot):
     '''
     Calculated white dwarfs ages with a frequentist approch. Starts from normal 
     dristribution of teff and logg based on the errors and passes the full
@@ -203,8 +208,8 @@ def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
     
     N = len(teff0)
     
+    #Set up the distribution of teff and logg
     teff_dist,logg_dist = [],[]
-    
     for i in range(N):
         if(np.isnan(teff0[i]+e_teff0[i]+logg0[i]+e_logg0[i])):
             teff_dist.append(np.nan)
@@ -213,26 +218,31 @@ def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
             teff_dist.append(np.random.normal(teff0[i],e_teff0[i],n_mc))
             logg_dist.append(np.random.normal(logg0[i],e_logg0[i],n_mc))
     teff_dist,logg_dist = np.array(teff_dist),np.array(logg_dist)
-        
+    
+    #From teff and logg get ages
     cooling_age_dist,final_mass_dist = calc_cooling_age(teff_dist,logg_dist,
                                                         N,model=model_wd)
-    
     initial_mass_dist = calc_initial_mass(model_ifmr,final_mass_dist,n_mc)
-    
     ms_age_dist = calc_ms_age(initial_mass_dist,feh=feh,vvcrit=vvcrit)
-    
     total_age_dist = cooling_age_dist + ms_age_dist
     
-    mask = np.logical_or(np.logical_or(ms_age_dist/1e9 > 13.8,
-                                       total_age_dist/1e9 > 13.8),
-                         cooling_age_dist/1e9 > 13.8)
+    #Replace all the ages which are higher than the age of the universe with
+    #nans
+    mask_nan = np.isnan(total_age_dist)
+    total_age_dist[mask_nan] = -1
     
+    mask = total_age_dist/1e9 > 13.8
+    total_age_dist[mask] = np.nan
+    
+    total_age_dist[mask_nan] = np.nan
+
     cooling_age_dist[mask] = np.copy(cooling_age_dist[mask])*np.nan
     final_mass_dist[mask] = np.copy(final_mass_dist[mask])*np.nan
     initial_mass_dist[mask] = np.copy(initial_mass_dist[mask])*np.nan
     ms_age_dist[mask] = np.copy(ms_age_dist[mask])*np.nan
     total_age_dist[mask] = np.copy(total_age_dist[mask])*np.nan
     
+    #Calculate percentiles and save results
     results = Table()
     
     median,high_err,low_err = calc_dist_percentiles(final_mass_dist,'none',
@@ -281,26 +291,31 @@ def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
             results['ms_age_dist'] = np.log10(ms_age_dist)
             results['total_age_dist'] = np.log10(total_age_dist)
 
-
-    
-    for x1,x2,x3,x4,x5,x6,x7,x8 in zip(teff0,logg0,ms_age_dist,
-                                       cooling_age_dist,total_age_dist,
-                                       initial_mass_dist,final_mass_dist,
-                                       comparison):
-        wd_path_id = get_wd_path_id(x1,x2,feh,vvcrit,model_wd,
-                                    model_ifmr,path) 
-        if(datatype=='yr'):
-            plot_distributions(x1,x2,x3,x4,x5,
-                               x6,x7,high_perc, low_perc, datatype,
-                               comparison=x8, name = wd_path_id + '_freq')
-        elif(datatype=='Gyr'):
-            plot_distributions(x1,x2,x3/1e9,x4/1e9,x5/1e9,
-                               x6,x7,high_perc, low_perc, datatype,
-                               comparison=x8, name = wd_path_id + '_freq')
-        elif(datatype=='log'):
-            plot_distributions(x1,x2,np.log10(x3),np.log10(x4),np.log10(x5),
-                               x6,x7,high_perc, low_perc, datatype,
-                               comparison=x8, name = wd_path_id + '_freq')
+    #Plot resulting distributions
+    if(plot==True):
+        if not os.path.exists(path):
+            os.makedirs(path) 
+        if(comparison==[]):
+            comparison = [[np.nan] for x in range(len(teff0))]
+        for x1,x2,x3,x4,x5,x6,x7,x8 in zip(teff0,logg0,ms_age_dist,
+                                           cooling_age_dist,total_age_dist,
+                                           initial_mass_dist,final_mass_dist,
+                                           comparison):
+            wd_path_id = get_wd_path_id(x1,x2,feh,vvcrit,model_wd,
+                                        model_ifmr,path) 
+            if(datatype=='yr'):
+                plot_distributions(x3,x4,x5,
+                                   x6,x7,high_perc, low_perc, datatype,
+                                   comparison=x8, name = wd_path_id + '_freq')
+            elif(datatype=='Gyr'):
+                plot_distributions(x3/1e9,x4/1e9,x5/1e9,
+                                   x6,x7,high_perc, low_perc, datatype,
+                                   comparison=x8, name = wd_path_id + '_freq')
+            elif(datatype=='log'):
+                plot_distributions(np.log10(x3),np.log10(x4),
+                                   np.log10(x5),
+                                   x6,x7,high_perc, low_perc, datatype,
+                                   comparison=x8, name = wd_path_id + '_freq')
     
     return results
 

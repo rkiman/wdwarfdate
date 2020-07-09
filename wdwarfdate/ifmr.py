@@ -136,7 +136,10 @@ def calc_initial_mass(model_ifmr,final_mass_dist,n_mc):
     
     #Remove all the values that are lower than the limit 
     #of initial mass in isochrones
+    mask_nan = np.isnan(initial_mass_dist)
+    initial_mass_dist[mask_nan] = 5
     mask_neg = initial_mass_dist < 0.1 
     initial_mass_dist[mask_neg] = np.nan
+    initial_mass_dist[mask_nan] = np.nan
 
     return initial_mass_dist
