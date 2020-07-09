@@ -77,8 +77,9 @@ def calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass,
             final_mass_median,final_mass_low,final_mass_high]
 
 def plot_distributions(ms_age,cooling_age,total_age, 
-                       initial_mass, final_mass, high_perc, low_perc, 
-                       datatype,comparison=[np.nan], name = 'none'):
+                       initial_mass, final_mass, datatype, 
+                       high_perc=84, low_perc=16, 
+                       comparison=[np.nan], name = 'none'):
 
     results = calc_percentiles(ms_age, cooling_age, total_age, 
                                initial_mass, final_mass, high_perc, low_perc)

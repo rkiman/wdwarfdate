@@ -92,7 +92,7 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
             e_logg0 = np.array([e_logg0])
         
         if(comparison==[]):
-            comparison = np.ones(len(teff0))*np.nan
+            comparison = [[np.nan] for x in range(len(teff0))]
         for teff0_i,e_teff0_i,logg0_i,e_logg0_i,c_i in zip(teff0,e_teff0,
                                                            logg0,e_logg0,
                                                            comparison):
@@ -117,7 +117,7 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                                              models0, init_params, c_i,
                                              high_perc, low_perc,datatype,
                                              nburn_in,n_calc_auto_corr,
-                                             n_indep_samples)
+                                             n_indep_samples,plot)
             results.add_row(results_i)
             
     elif(method=='freq'):
@@ -132,7 +132,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
 def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
                          models0, init_params, comparison,
                          high_perc, low_perc,datatype,
-                         nburn_in,n_calc_auto_corr,n_indep_samples):
+                         nburn_in,n_calc_auto_corr,n_indep_samples,
+                         plot):
     '''
     Calculates percentiles for main sequence age, cooling age, total age, 
     final mass and initial mass of a white dwarf with teff0 and logg0. 
@@ -146,7 +147,7 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
     #Run emcee to obtain likelihood evaluations of ms age, cooling age, 
     #total age, final mass and initial mass
     flat_samples = run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, 
-                            init_params, comparison,
+                            init_params, comparison,plot,
                             nburn_in=nburn_in,
                             n_calc_auto_corr=n_calc_auto_corr,
                             n_indep_samples=n_indep_samples)
@@ -169,26 +170,27 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
     results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, 
                                initial_mass, final_mass, high_perc, 
                                low_perc, datatype=datatype)
-
-    if(datatype=='yr'):
-        plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, 
-                           ln_total_age, initial_mass, final_mass, 
-                           high_perc, low_perc, datatype,
-                           comparison = np.log10(comparison), 
-                           name = wd_path_id)
-    elif(datatype=='Gyr'):
-        plot_distributions(teff0, logg0, (10**ln_ms_age)/1e9, 
-                           (10**ln_cooling_age)/1e9, 
-                           (10**ln_total_age)/1e9, initial_mass, final_mass, 
-                           high_perc, low_perc, datatype,
-                           comparison = comparison, 
-                           name = wd_path_id)
-    elif(datatype=='log'):
-        plot_distributions(teff0, logg0, ln_ms_age, ln_cooling_age, 
-                           ln_total_age, initial_mass, final_mass, 
-                           high_perc, low_perc, datatype,
-                           comparison = comparison, 
-                           name = wd_path_id)        
+    if(plot==True):            
+        if(datatype=='yr'):
+            plot_distributions(ln_ms_age, ln_cooling_age, 
+                               ln_total_age, initial_mass, final_mass, 
+                               datatype, high_perc, low_perc, 
+                               comparison = comparison, 
+                               name = wd_path_id)
+        elif(datatype=='Gyr'):
+            plot_distributions((10**ln_ms_age)/1e9, 
+                               (10**ln_cooling_age)/1e9, 
+                               (10**ln_total_age)/1e9, initial_mass, 
+                               final_mass, datatype,
+                               high_perc, low_perc, 
+                               comparison = comparison, 
+                               name = wd_path_id)
+        elif(datatype=='log'):
+            plot_distributions(ln_ms_age, ln_cooling_age, 
+                               ln_total_age, initial_mass, final_mass, 
+                               datatype, high_perc, low_perc, 
+                               comparison = comparison, 
+                               name = wd_path_id)        
     return results
 
 def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
