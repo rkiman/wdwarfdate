@@ -74,8 +74,8 @@ When we run the *freq* method, *wdwarfdate* will save one file:
 
 For more explanation on how to use *wdwarfdate* see the tutorials.
 
-User Guide
-----------
+.. User Guide
+.. ----------
 
 .. toctree::
    :maxdepth: 2
@@ -85,15 +85,15 @@ User Guide
    user/models_included
 
 
-Tutorials
----------
-
-Some tutorials on how to use the code
+.. Tutorials
+.. ---------
 
 .. toctree::
    :maxdepth: 2
    :caption: Tutorials
 
+   Some tutorials on how to use the code
+   
    tutorials/freq_method.ipynb
 
 Citation
