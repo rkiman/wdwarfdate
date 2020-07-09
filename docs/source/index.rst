@@ -94,6 +94,7 @@ For more explanation on how to use *wdwarfdate* see the tutorials.
    :caption: Tutorials
 
    tutorials/freq_method.ipynb
+   tutorials/bayesian_method.ipynb
 
 
 
