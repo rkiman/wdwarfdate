@@ -83,6 +83,7 @@ For more explanation on how to use *wdwarfdate* see the tutorials.
 
    user/install
    user/models_included
+   user/citation
 
 
 .. Tutorials
@@ -92,20 +93,15 @@ For more explanation on how to use *wdwarfdate* see the tutorials.
    :maxdepth: 2
    :caption: Tutorials
 
-   Some tutorials on how to use the code
-   
    tutorials/freq_method.ipynb
 
-Citation
---------
 
-If you use *wdwarfdate* in your reaserch, there will be a paper to cite: Kiman et al. in prep.
 
 License
 -------
 
-.. toctree::
-   :maxdepth: 2
-	
-   lic/licensefile
+MIT License
 
+Copyright (c) 2020 Rocio Kiman
+
+More information `here <https://github.com/rkiman/wdwarfdate/blob/master/LICENSE>`_
