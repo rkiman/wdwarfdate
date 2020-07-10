@@ -32,6 +32,7 @@ Getting right to it, let's make and example on how to estimate the ages of a cou
 
 ```python
     import wdwarfdate
+    import numpy as np
 
     #Define data for the white dwarfs
     teffs = np.array([19250,20250])
