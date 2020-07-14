@@ -15,7 +15,7 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                 datatype='yr',
                 path='results/',
                 nburn_in = 1000,n_calc_auto_corr = 10000,
-                n_indep_samples = 1000,n_mc=2000,
+                n_indep_samples = 1000,auto_corr_time = 0,n_mc=2000,
                 return_distributions=False,
                 plot=False):
     
@@ -59,6 +59,9 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
     n_indep_samples : scalar. Number of independent samples. The MCMC will run
                      for n_idep_samples*n_calc_auto_corr steps. Only useful in 
                      Bayesian mode.
+    auto_corr_time : scalar. If different from zero, the code will skip the 
+                     step of calculating the auto-correlation time and use the 
+                     given value.
     n_mc : scalar. Length of the distribution for each parameter. Only 
            useful in Freq mode.
     return_distributions : True or False. Adds columns to the outputs with the
@@ -117,7 +120,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                                              models0, init_params, c_i,
                                              high_perc, low_perc,datatype,
                                              nburn_in,n_calc_auto_corr,
-                                             n_indep_samples,plot)
+                                             n_indep_samples,auto_corr_time,
+                                             plot)
             results.add_row(results_i)
             
     elif(method=='freq'):
@@ -133,7 +137,7 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
                          models0, init_params, comparison,
                          high_perc, low_perc,datatype,
                          nburn_in,n_calc_auto_corr,n_indep_samples,
-                         plot):
+                         auto_corr_time,plot):
     '''
     Calculates percentiles for main sequence age, cooling age, total age, 
     final mass and initial mass of a white dwarf with teff0 and logg0. 
@@ -150,7 +154,8 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
                             init_params, comparison,plot,
                             nburn_in=nburn_in,
                             n_calc_auto_corr=n_calc_auto_corr,
-                            n_indep_samples=n_indep_samples)
+                            n_indep_samples=n_indep_samples,
+                            auto_corr_time=auto_corr_time)
 
     ln_ms_age = flat_samples[:,0]
     ln_cooling_age = flat_samples[:,1]
@@ -161,9 +166,9 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
     
     #Use the likelihood evaluations for the dependent parameters 
     #and the posterior for the independen parameters
-    ln_total_age = like_eval[500:,2]
-    initial_mass = like_eval[500:,3]
-    final_mass = like_eval[500:,4]
+    ln_total_age = like_eval[:,2]
+    initial_mass = like_eval[:,3]
+    final_mass = like_eval[:,4]
         
     #Calculate percentiles for ms age, cooling age, total age, 
     #initial mass and final mass

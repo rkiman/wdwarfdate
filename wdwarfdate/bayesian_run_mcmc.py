@@ -57,10 +57,11 @@ def get_post_dist(teff0, e_teff0, logg0, e_logg0, models0, n=100):
     init_max_like = np.array([x[idx],y[idx],0])
     
     return axis, post_list, post_ms_age, post_cooling_age, init_max_like
-
+    
 def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, 
              init_params, comparison,plot,
-             nburn_in,n_calc_auto_corr,n_indep_samples):
+             nburn_in,n_calc_auto_corr,n_indep_samples,
+             auto_corr_time):
     '''
     Starting from the maximum likelihood ages (main sequence age and cooling
     age), samples the posterior to get the likelihood evaluations of the rest 
@@ -86,17 +87,21 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
     
     #Running burn in
     p0_new,_,_ = sampler.run_mcmc(p0, nburn_in)
-    
     sampler.reset()
     
-    #Running mcmc to calculate auto-correlation time'
-    p,_,_ = sampler.run_mcmc(p0_new, n_calc_auto_corr)
-    chain = sampler.chain
-    autoc_time = calc_auto_corr_time(chain,plot,wd_path_id+'_corr_time.png')
+    if(auto_corr_time==0):
+        #Running mcmc to calculate auto-correlation time'
+        p,_,_ = sampler.run_mcmc(p0_new, n_calc_auto_corr)
+        chain = sampler.chain
+        autoc_time = calc_auto_corr_time(chain,plot,
+                                         wd_path_id+'_corr_time.png')
+        sampler.reset()
+    else:
+        autoc_time=auto_corr_time
+        p=p0_new
     
     #Reset sampler and remove the save likelihood evaluation that were saved
     #while calculating autocorrelation time and burn in
-    sampler.reset()
     save_likelihoods_file = wd_path_id +'.txt'
     os.remove(save_likelihoods_file)
     
@@ -104,7 +109,7 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
     p,_,_ = sampler.run_mcmc(p, n_indep_samples*autoc_time);
     
     #Obtain chain of samples
-    chain = sampler.chain[:,500:,:]
+    chain = sampler.chain[:,:,:]
     flat_samples = chain.reshape((-1,ndim))
     if(plot==True):
         plot_results_mcmc(chain,ndim,wd_path_id)
