@@ -6,6 +6,24 @@ from wdwarfdate.ms_age import get_isochrone_model
 from wdwarfdate.cooling_age import get_cooling_model
 import numpy as np
 
+def test_get_isochrone_model():
+    for feh in ['p0.00','m4.00','m1.00','p0.50']:
+        for vvcrit in ['0.0','0.4']:
+            model_iso = get_isochrone_model(feh=feh,vvcrit=vvcrit)
+            f_initial_mass,initial_mass,ms_age = model_iso
+            idx = np.argsort(initial_mass)
+            initial_mass = np.log10(initial_mass[idx])
+            log_ms_age = np.log10(ms_age[idx])
+            N=len(initial_mass)
+            delta_mass=[initial_mass[i+1]-initial_mass[i] for i in range(N-1)]
+            delta_age=[log_ms_age[i+1]-log_ms_age[i] for i in range(N-1)]
+            delta_mass,delta_age = np.array(delta_mass), np.array(delta_age)
+            e1="Outlier in mass iso model feh:{}, vvcrit:{}".format(feh,vvcrit)
+            e2="Outlier in age iso model feh:{}, vvcrit{}".format(feh,vvcrit)
+            assert all(abs(delta_mass)<0.2),e1
+            assert all(abs(delta_age)<0.02),e2
+    
+
 def test_ln_posterior_prob():
     ln_ms_age0 = np.log10(1181155122.7574291)
     ln_cooling_age0 = np.log10(1911395787.679186)
