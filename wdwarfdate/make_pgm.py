@@ -25,11 +25,11 @@ def make_and_save_pgm():
     pgm.add_node("finalmass_hat", r"$\hat{m_{f_n}}$", 1.4, 4)
     pgm.add_node("finalmass", r"$m_{f_n}$", 1.4, 3)
     pgm.add_node("teff", r"$T_{eff_n}$", 1.4, 2)
-    pgm.add_node("logg", r"$logg_n$", 2.4, 2)
+    pgm.add_node("logg", r"$\log g_n$", 2.4, 2)
     
     # Data.
     pgm.add_node("teff_obs", r"$T_{eff_n}$", 1.4, 1, observed=True)
-    pgm.add_node("logg_obs", r"$logg_n$", 2.4, 1, observed=True)
+    pgm.add_node("logg_obs", r"$\log g_n$", 2.4, 1, observed=True)
     
     # Add in the edges.
     pgm.add_edge("prior_ms", "msage")
@@ -44,6 +44,7 @@ def make_and_save_pgm():
     pgm.add_edge("finalmass", "teff")
     pgm.add_edge("teff", "teff_obs")
     pgm.add_edge("coolingage", "logg")
+    pgm.add_edge("coolingage", "teff")
     pgm.add_edge("finalmass", "logg")
     pgm.add_edge("logg", "logg_obs")
     

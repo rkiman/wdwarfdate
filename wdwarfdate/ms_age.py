@@ -1,7 +1,8 @@
 import numpy as np
 from astropy.table import Table
 from scipy import interpolate
-import pkg_resources
+import os
+import inspect
 
 def get_isochrone_model(feh,vvcrit):
     '''
@@ -25,10 +26,10 @@ def get_isochrone_model(feh,vvcrit):
                    f_initial_mass model.
     '''
     #Load isochrone
-    file_path = '../Models/MIST/MIST_v1.2_feh_'
+    file_path = 'Models/MIST/MIST_v1.2_feh_'
     path = file_path + feh + '_afe_p0.0_vvcrit' + vvcrit + '_EEPS_sum.csv'
-
-    filepath = pkg_resources.resource_filename(__name__, path)
+    path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    filepath = os.path.join(path1,path)
         
     table_model = Table.read(filepath)
     
@@ -62,9 +63,10 @@ def calc_ms_age(initial_mass_dist,feh,vvcrit):
     '''
 
     #Load isochrone model
-    path1 = '../Models/MIST/MIST_v1.2_feh_'
-    path2 = feh+'_afe_p0.0_vvcrit'+vvcrit+'_EEPS_sum.csv'
-    filepath = pkg_resources.resource_filename(__name__, path1+path2)
+    file_path = 'Models/MIST/MIST_v1.2_feh_'
+    path = file_path + feh + '_afe_p0.0_vvcrit' + vvcrit + '_EEPS_sum.csv'
+    path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    filepath = os.path.join(path1,path)
 
     table_model = Table.read(filepath)
     

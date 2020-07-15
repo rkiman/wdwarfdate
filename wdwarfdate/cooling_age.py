@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import interpolate
-import pkg_resources
+import inspect
+import os
 
 def get_cooling_model(model_wd):  
     '''
@@ -29,13 +30,15 @@ def get_cooling_model(model_wd):
 
     #Load cooling tracks depending on the model of white dwarf chosen
     if(model_wd == 'DA'):
-        path = '../Models/cooling_models/Table_DA'
-        filepath = pkg_resources.resource_filename(__name__, path)
+        path = 'Models/cooling_models/Table_DA'
+        path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
+        filepath = os.path.join(path1,path)
         table_model = np.loadtxt(filepath)
 
     if(model_wd == 'DB'):
-        path = '../Models/cooling_models/Table_DB'
-        filepath = pkg_resources.resource_filename(__name__, path)
+        path = 'Models/cooling_models/Table_DB'
+        path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
+        filepath = os.path.join(path1,path)
         table_model = np.loadtxt(filepath)
     
     model_T = table_model[:,0]
@@ -78,14 +81,15 @@ def calc_cooling_age(teff_dist,logg_dist,N,model):
     '''
     #Load cooling track for the model selected.
     if(model == 'DA'):
-        path = '../Models/cooling_models/Table_DA'
-        filepath = pkg_resources.resource_filename(__name__, path)
-        table_model = np.loadtxt(filepath)
+        path = 'Models/cooling_models/Table_DA'
+        path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
+        filepath = os.path.join(path1,path)
         rows = 51
         
     if(model == 'DB'):
-        path = '../Models/cooling_models/Table_DB'
-        filepath = pkg_resources.resource_filename(__name__, path)
+        path = 'Models/cooling_models/Table_DB'
+        path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
+        filepath = os.path.join(path1,path)
         table_model = np.loadtxt(filepath)
         rows = 62
     
