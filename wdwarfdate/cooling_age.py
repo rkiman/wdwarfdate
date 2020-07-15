@@ -84,6 +84,7 @@ def calc_cooling_age(teff_dist,logg_dist,N,model):
         path = 'Models/cooling_models/Table_DA'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1,path)
+        table_model = np.loadtxt(filepath)
         rows = 51
         
     if(model == 'DB'):
