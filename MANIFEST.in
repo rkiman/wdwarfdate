@@ -1,0 +1,6 @@
+include wdwarfdate/Models/__init__.py
+include wdwarfdate/Models/cooling_models/__init__.py
+include wdwarfdate/Models/cooling_models/Table_DA
+include wdwarfdate/Models/cooling_models/Table_DB
+include wdwarfdate/Models/MIST/__init__.py
+include wdwarfdate/Models/MIST/*.csv

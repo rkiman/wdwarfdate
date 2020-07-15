@@ -12,5 +12,6 @@ setup(name='wdwarfdate_code',
       #license='MIT',
       packages=['wdwarfdate'],
       install_requires=['numpy','astropy','matplotlib','emcee','corner','scipy'],
-      zip_safe=False)
+      zip_safe=False,
+      include_package_data=True)
 
