@@ -2,7 +2,7 @@
 wdwarfdate
 ==========
 
-*wdwarfdate* is an open source code which estimates ages of white dwarf in a bayesian framework. *wdwarfdate* runs a chain a models to estimate ages of white dwarfs and their uncertainties from an effective temperature and a surface gravity. Checkout the documentation for *wdwarfdate* [here](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
+*wdwarfdate* is an open source code which estimates ages of white dwarf in a bayesian framework. *wdwarfdate* runs a chain of models assuming single star evolution, to estimate ages of white dwarfs and their uncertainties from an effective temperature and a surface gravity. Checkout the documentation for *wdwarfdate* [here](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
 
 
 Installation
@@ -76,7 +76,7 @@ The output of this function will be an astropy Table with one row for each teff 
 - *final_mass_err_low:* The difference between the median and the 16th percentile of the final mass distribution
 - *final_mass_err_high:* The difference between the 84th percentile and the median of the final mass distribution
 
-When we run the *bayesian* method, *wdwarfdate* will also save four files per star in a folder called results (which the code will create if it doesn't exist):
+When we run the *bayesian* method, *wdwarfdate* will also save five files per star in a folder called results (which the code will create if it doesn't exist):
 
 1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corner_plot.png which contains the corner plot for the three variables the code samples: main sequence age, cooling age and delta m.
 
@@ -85,6 +85,8 @@ When we run the *bayesian* method, *wdwarfdate* will also save four files per st
 3. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age).
 
 4. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corr_time.png which contains the result of the autocorrelation time as explained in the [tutorial](https://emcee.readthedocs.io/en/stable/tutorials/autocorr/) by Dan Foreman-Mackey.
+
+5. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST.txt which contains the likelihood evaluations in each step of the MCMC for all the parameters we are interested in. These are the columns: 'ln_ms_age', 'ln_cooling_age', 'ln_total_age, 'initial_mass' and 'final_mass'.
 
 When we run the *freq* method, *wdwarfdate* will save one file:
 
