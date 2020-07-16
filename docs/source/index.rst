@@ -2,7 +2,7 @@
 wdwarfdate
 ==========
 
-*wdwarfdate* is an open source code which estimates ages of white dwarfs in a bayesian framework. *wdwarfdate* runs a chain a models to estimate ages of white dwarfs and their uncertainties from an effective temperature and a surface gravity. 
+*wdwarfdate* is an open source code which estimates ages of white dwarfs in a bayesian framework. *wdwarfdate* runs a chain a models assuming a single star evolution, to estimate ages of white dwarfs and their uncertainties from an effective temperature and a surface gravity. 
 
 .. Contents:
 
