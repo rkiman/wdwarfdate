@@ -57,7 +57,7 @@ def ifmr_bayesian(initial_mass,ifmr_model,min_initial_mass_mist,
     return final_mass
 
 
-def calc_initial_mass(model_ifmr,final_mass_dist,n_mc):
+def calc_initial_mass(model_ifmr,final_mass_dist):
     '''
     Uses different initial-final mass relations to calculte progenitor's mass 
     from the white dwarf mass (final mass). This function is used in the 
@@ -70,7 +70,6 @@ def calc_initial_mass(model_ifmr,final_mass_dist,n_mc):
                  or 'Salaris_2009'.
     final_mass_dist : list of arrays. List of final mass distributions 
                       for each white dwarf.
-    n_mc : scalar, arraya. Total number of white dwarf.
     
     
     Returns
@@ -79,6 +78,7 @@ def calc_initial_mass(model_ifmr,final_mass_dist,n_mc):
                         for each white dwarf progenitor.
     '''        
     initial_mass_dist = []
+    n_mc = len(final_mass_dist[0])
     
     if(model_ifmr == 'Cummings_2018_MIST'):
         '''

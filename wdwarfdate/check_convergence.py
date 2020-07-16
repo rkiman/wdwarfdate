@@ -7,41 +7,21 @@ https://emcee.readthedocs.io/en/stable/tutorials/autocorr/
 '''
 
 import numpy as np
-import matplotlib.pyplot as plt
 
-def calc_auto_corr_time(chain,plot,name):
-    labels = [r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$',r'$delta_m$']
+def calc_auto_corr_time(chain):
+
     N = np.exp(np.linspace(np.log(100),np.log(chain.shape[1]), 10)).astype(int)
-    
-    plt.plot(N, N / 50.0, "--k", label=r"$\tau = N/50$")
     corr_time = []
     #Loop over parameters
-    if(plot==True):
-        for j in range(0,3):
-            chain1 = chain[:, :, j]
-            new = np.empty(len(N))
-            for i, n in enumerate(N):
-                auto_corr = autocorr_new_wd(chain1[:, :n])
-                new[i] = auto_corr
-            plt.axhline(y=new[-1],color='k',linestyle='--')
-            corr_time.append(new[-1])
-            plt.loglog(N, new, "-o", label="{}".format(labels[j]))
-            plt.xlabel("number of samples, $N$")
-            plt.ylabel(r"$\tau$ estimates")
-            plt.legend(fontsize=14)
-        plt.grid()
-        plt.savefig(name)
-        plt.close()
-    else:
-        for j in range(0,3):
-            chain1 = chain[:, :, j]
-            new = np.empty(len(N))
-            for i, n in enumerate(N):
-                auto_corr = autocorr_new_wd(chain1[:, :n])
-                new[i] = auto_corr
-            corr_time.append(new[-1])
+    for j in range(0,3):
+        chain1 = chain[:, :, j]
+        new = np.empty(len(N))
+        for i, n in enumerate(N):
+            auto_corr = autocorr_new_wd(chain1[:, :n])
+            new[i] = auto_corr
+        corr_time.append(new[-1])
 
-    return np.max(corr_time)
+    return np.array(corr_time)
     
     
 def next_pow_two_wd(n):

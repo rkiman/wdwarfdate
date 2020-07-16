@@ -4,7 +4,7 @@ import os
 from .cooling_age import calc_cooling_age,get_cooling_model
 from .ifmr import calc_initial_mass
 from .ms_age import calc_ms_age,get_isochrone_model
-from .bayesian_run_mcmc import run_mcmc
+from .bayesian_run_mcmc import run_mcmc, get_initial_conditions
 from .extra_func import calc_percentiles, plot_distributions
 
 def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
@@ -14,8 +14,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                 high_perc = 84, low_perc = 16,
                 datatype='yr',
                 path='results/',
-                nburn_in = 1000,n_calc_auto_corr = 10000,
-                n_indep_samples = 1000,auto_corr_time = 0,n_mc=2000,
+                nburn_in = 1000, max_n = 100000,
+                n_indep_samples = 100,n_mc=2000,
                 return_distributions=False,
                 plot=False):
     
@@ -54,14 +54,11 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
            will be save. If it doesn't exist, the code will create it.
     nburn_in : scalar. Number of steps for the burn in. Only useful in 
                Bayesian mode.
-    n_calc_auto_corr : scalar. Number of steps taken to calculate 
-                       auto-correlation time. Only useful in Bayesian mode.
+    max_n : scalar. Maximum number of steps done by the mcmc to estimate 
+            parameters. Only useful in Bayesian mode.
     n_indep_samples : scalar. Number of independent samples. The MCMC will run
                      for n_idep_samples*n_calc_auto_corr steps. Only useful in 
                      Bayesian mode.
-    auto_corr_time : scalar. If different from zero, the code will skip the 
-                     step of calculating the auto-correlation time and use the 
-                     given value.
     n_mc : scalar. Length of the distribution for each parameter. Only 
            useful in Freq mode.
     return_distributions : True or False. Adds columns to the outputs with the
@@ -109,7 +106,11 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
             isochrone_model = get_isochrone_model(feh=feh,vvcrit=vvcrit)
             
             models0 = [model_ifmr,isochrone_model,cooling_models,wd_path_id]
-                      
+            
+            if(init_params==[]):
+                init_params = get_initial_conditions(teff0_i,logg0_i,
+                                                     model_wd,model_ifmr,
+                                                     feh,vvcrit)
             #Check if file exists and remove if it does so if can be filled 
             #again
             if os.path.exists(wd_path_id+'.txt'):
@@ -119,8 +120,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                                              logg0_i,e_logg0_i,
                                              models0, init_params, c_i,
                                              high_perc, low_perc,datatype,
-                                             nburn_in,n_calc_auto_corr,
-                                             n_indep_samples,auto_corr_time,
+                                             nburn_in,max_n,
+                                             n_indep_samples,
                                              plot)
             results.add_row(results_i)
             
@@ -136,8 +137,7 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
 def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
                          models0, init_params, comparison,
                          high_perc, low_perc,datatype,
-                         nburn_in,n_calc_auto_corr,n_indep_samples,
-                         auto_corr_time,plot):
+                         nburn_in,max_n,n_indep_samples,plot):
     '''
     Calculates percentiles for main sequence age, cooling age, total age, 
     final mass and initial mass of a white dwarf with teff0 and logg0. 
@@ -147,20 +147,17 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
     [log10(ms age (yr)),log10(cooling age (yr)), log10(totla age (yr)), 
     initial mass, final mass]
     '''
-        
+    
+    _,_,_,wd_path_id = models0
     #Run emcee to obtain likelihood evaluations of ms age, cooling age, 
     #total age, final mass and initial mass
     flat_samples = run_mcmc(teff0, e_teff0, logg0, e_logg0, models0, 
-                            init_params, comparison,plot,
-                            nburn_in=nburn_in,
-                            n_calc_auto_corr=n_calc_auto_corr,
-                            n_indep_samples=n_indep_samples,
-                            auto_corr_time=auto_corr_time)
+                            init_params, comparison,
+                            nburn_in,max_n,n_indep_samples,plot)
 
     ln_ms_age = flat_samples[:,0]
     ln_cooling_age = flat_samples[:,1]
 
-    model_ifmr,isochrone_model,cooling_models,wd_path_id = models0
     #Open file where the likelihood evaluations where saved
     like_eval = np.loadtxt(wd_path_id+'.txt')
     
@@ -169,7 +166,7 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
     ln_total_age = like_eval[:,2]
     initial_mass = like_eval[:,3]
     final_mass = like_eval[:,4]
-        
+    
     #Calculate percentiles for ms age, cooling age, total age, 
     #initial mass and final mass
     results = calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, 
@@ -229,7 +226,7 @@ def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
     #From teff and logg get ages
     cooling_age_dist,final_mass_dist = calc_cooling_age(teff_dist,logg_dist,
                                                         N,model=model_wd)
-    initial_mass_dist = calc_initial_mass(model_ifmr,final_mass_dist,n_mc)
+    initial_mass_dist = calc_initial_mass(model_ifmr,final_mass_dist)
     ms_age_dist = calc_ms_age(initial_mass_dist,feh=feh,vvcrit=vvcrit)
     total_age_dist = cooling_age_dist + ms_age_dist
     
