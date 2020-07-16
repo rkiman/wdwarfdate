@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 def calc_auto_corr_time(chain,plot,name):
     labels = [r'$\log_{10}($msa$/yr)$',r'$\log_{10}($ca$/yr)$',r'$delta_m$']
-    N = np.exp(np.linspace(np.log(100), np.log(chain.shape[1]), 10)).astype(int)
+    N = np.exp(np.linspace(np.log(100),np.log(chain.shape[1]), 10)).astype(int)
     
     plt.plot(N, N / 50.0, "--k", label=r"$\tau = N/50$")
     corr_time = []
