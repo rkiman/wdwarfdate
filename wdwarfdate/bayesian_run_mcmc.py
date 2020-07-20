@@ -23,7 +23,7 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
 
     _,_,_,wd_path_id = models0
     ndim, nwalkers = 3, 70 #nwalkers > 2*ndim
-        
+    
     #Initialize walkers    
     p0 = np.array([init_params
                    + np.random.uniform(-.05,.05,3) for i in range(nwalkers)])
@@ -95,22 +95,23 @@ def plot_results_mcmc(chain,ndim,wd_path_id):
     for i in range(50):
         ax1.plot(chain[i,:,0],color='k',alpha=0.05)
         ax1.axhline(y=np.median(flat_samples[:,0]),color='k')
-    ax1.set_ylabel(r'$\log_{10}($MS Age$/yr)$')
+    ax1.set_ylabel(r'$\log_{10}(t_{\rm ms}/{\rm yr})$')
     
     for i in range(50):
         ax2.plot(chain[i,:,1],color='k',alpha=0.05)
         ax2.axhline(y=np.median(flat_samples[:,1]),color='k')
-    ax2.set_ylabel(r'$\log_{10}($Cooling Age$/yr)$')
+    ax2.set_ylabel(r'$\log_{10}(t_{\rm cool}/{\rm yr})$')
     
     for i in range(50):
         ax3.plot(chain[i,:,2],color='k',alpha=0.05)
         ax3.axhline(y=np.median(flat_samples[:,2]),color='k')
-    ax3.set_ylabel(r'$delta_{\rm m}$')
+    ax3.set_ylabel(r'$\Delta_{\rm m}$')
     plt.tight_layout()
     plt.savefig(wd_path_id + '_walkers.png')
     plt.close(f)
     
-    labels=[r'$\log_{10}($t_{\rm ms}$/yr)$',r'$\log_{10}($t_{\rm cool}$/yr)$',
+    labels=[r'$\log_{10}(t_{\rm ms}/{\rm yr})$',
+            r'$\log_{10}(t_{\rm cool}/{\rm yr})$',
             r'$\Delta _{\rm m}$']
     
     fig = corner.corner(flat_samples, labels=labels, 
@@ -120,7 +121,7 @@ def plot_results_mcmc(chain,ndim,wd_path_id):
     plt.close(fig)
 
     
-def get_initial_conditions(teff0,logg0,model_wd,model_ifmr,
+def get_initial_conditions(teff0,e_teff0,logg0,e_logg0,model_wd,model_ifmr,
                            feh,vvcrit):
     teff_dist = np.array([[teff0]])
     logg_dist = np.array([[logg0]])
@@ -132,5 +133,17 @@ def get_initial_conditions(teff0,logg0,model_wd,model_ifmr,
     init_params = np.array([np.log10(ms_age_dist[0][0]),
                             np.log10(cool_age_dist[0][0]),
                             0])
-    
+
+    if(any(np.isnan(init_params))):
+        teff_dist = np.array([np.random.normal(teff0,e_teff0,1000)])
+        logg_dist = np.array([np.random.normal(logg0,e_logg0,1000)])
+        cool_age_dist,final_mass_dist = calc_cooling_age(teff_dist,logg_dist,
+                                                         1,model_wd)
+        initial_mass_dist = calc_initial_mass(model_ifmr,final_mass_dist)
+        ms_age_dist = calc_ms_age(initial_mass_dist,feh,vvcrit)
+        
+        init_params = np.array([np.nanmedian(np.log10(ms_age_dist[0])),
+                                np.nanmedian(np.log10(cool_age_dist[0])),
+                                0])
+
     return init_params

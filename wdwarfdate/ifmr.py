@@ -10,8 +10,8 @@ def ifmr_bayesian(initial_mass,ifmr_model,min_initial_mass_mist,
     ----------
     initial_mass : float. Initial mass of the progenitor of the white dwarf.
     ifmr_model : string. Initial to final mass relation model. Can be 
-                 'Cummings_2018_MIST', 'Cummings_2018_PARSEC' 
-                 or 'Salaris_2009'.
+                 'Cummings_2018_MIST', 'Cummings_2018_PARSEC', 
+                 'Salaris_2009' or 'Williams_2009'.
     min_initial_mass_mist : float. Minimum initial mass in the MIST isochrone.
     max_initial_mass_mist : float. Maximum initial mass in the MIST isochrone.
     
@@ -26,9 +26,11 @@ def ifmr_bayesian(initial_mass,ifmr_model,min_initial_mass_mist,
     final_mass = np.asarray(final_mass)
     
     if(ifmr_model == 'Cummings_2018_MIST'):
-        #Initial-Final mass relation from 
-        #Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
-        #based on MIST isochrones
+        '''
+        Initial-Final mass relation from 
+        Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
+        based on MIST isochrones
+        '''
         mask1 = (min_initial_mass_mist <= initial_mass) * (initial_mass < 2.85)
         mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
         mask3 = (3.60 <= initial_mass) * (initial_mass < max_initial_mass_mist)
@@ -37,9 +39,11 @@ def ifmr_bayesian(initial_mass,ifmr_model,min_initial_mass_mist,
         final_mass[mask3] = initial_mass[mask3] * 0.107 + 0.471
         
     elif(ifmr_model == 'Cummings_2018_PARSEC'):
-        #Initial-Final mass relation from 
-        #Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
-        #based on PARSEC isochrones
+        '''
+        Initial-Final mass relation from 
+        Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
+        based on PARSEC isochrones
+        '''
         mask1 = (0.87 <= initial_mass) * (initial_mass < 2.8)
         mask2 = (2.8 <= initial_mass) * (initial_mass < 3.65)
         mask3 = (3.65 <= initial_mass) * (initial_mass < 8.20)
@@ -47,13 +51,24 @@ def ifmr_bayesian(initial_mass,ifmr_model,min_initial_mass_mist,
         final_mass[mask2] = initial_mass[mask2] * 0.181 + 0.210
         final_mass[mask3] = initial_mass[mask3] * 0.0835 + 0.565
     elif(ifmr_model == 'Salaris_2009'):
-        #Initial-Final mass relation from 
-        #Salaris, M., et al., Astrophys. J. 692, 1013–1032 (2009).
-        
+        '''
+        Initial-Final mass relation from 
+        Salaris, M., et al., Astrophys. J. 692, 1013–1032 (2009).
+        '''
         mask1 = (1.7 <= initial_mass) * (initial_mass < 4)
         mask2 = (4 <= initial_mass) 
         final_mass[mask1] = initial_mass[mask1] * 0.134 + 0.331
         final_mass[mask2] = initial_mass[mask2] * 0.047 + 0.679   
+    elif(ifmr_model == 'Williams_2009'):
+        '''
+        Uses initial-final mass relation from 
+        Williams, K. A., et al., Astrophys. J. 693, 355–369 (2009).
+        to calculte progenitor's mass from the white dwarf mass.
+        
+        Mfinal = 0.339 ± 0.015 + (0.129 ± 0.004)Minit ;
+        '''    
+        final_mass = 0.339 + 0.129*initial_mass
+        
     return final_mass
 
 

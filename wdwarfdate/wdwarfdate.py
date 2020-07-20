@@ -37,8 +37,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
           or 'p0.50'
     vvcrit : string. Parameter for the isochrone. Can be: '0.0' or '0.4'
     model_ifmr : string. Initial to final mass relation model. Can be 
-                 'Cummings_2018_MIST', 'Cummings_2018_PARSEC' 
-                 or 'Salaris_2009'.
+                 'Cummings_2018_MIST', 'Cummings_2018_PARSEC',
+                 'Salaris_2009' or 'Williams_2009'.
     init_params : list, array. Optional initial parameter for the burn in of 
                   the mcmc for:
                   [log10 ms age, log10 cooling age, delta m]. 
@@ -108,7 +108,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
             models0 = [model_ifmr,isochrone_model,cooling_models,wd_path_id]
             
             if(init_params==[]):
-                init_params = get_initial_conditions(teff0_i,logg0_i,
+                init_params = get_initial_conditions(teff0_i,e_teff0_i,
+                                                     logg0_i,e_logg0_i,
                                                      model_wd,model_ifmr,
                                                      feh,vvcrit)
             #Check if file exists and remove if it does so if can be filled 
