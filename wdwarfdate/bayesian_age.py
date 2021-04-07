@@ -7,7 +7,8 @@ from .ifmr import ifmr_bayesian
 min_initial_mass_mist = 0.83 - 0.1
 max_initial_mass_mist =  7.20 + 0.1
 
-log_age_universe = 10.13988 #log10(13.8*1e9)
+log_age_universe = 15 #log10(20*1e9)
+#10.13988 #log10(13.8*1e9)
 
 def model_teff_logg(params,models):
     '''
@@ -25,13 +26,15 @@ def model_teff_logg(params,models):
     ln_total_age = np.log10(10**ln_cooling_age + 10**ln_ms_age)
     #print('total age: {}'.format(ln_total_age))
     
-    if(ln_total_age >= log_age_universe):
-        return 1.,1.
+    #if(ln_total_age >= log_age_universe):
+    #    return 1.,1.
     
     #Get the initial mass from the main sequence age using isochrones
     #Return -inf if ms_age values that are not included in the model
+    #if(np.logical_or(ln_ms_age < np.nanmin(ms_age_model),
+    #                 ln_ms_age >= log_age_universe)):
     if(np.logical_or(ln_ms_age < np.nanmin(ms_age_model),
-                     ln_ms_age >= log_age_universe)):
+                     ln_ms_age > np.nanmax(ms_age_model))):
         #print('ms age out of range')
         return 1.,1.
     initial_mass = f_initial_mass(ln_ms_age)
@@ -77,7 +80,8 @@ def model_teff_logg(params,models):
     #of final_mass and cooling age. So we do not take into account that point.
     if(np.isnan(teff_model+logg_model)):
         #print('teff or logg nan')
-        
+        return 1.,1.
+    elif(np.logical_or(teff_model<0,logg_model<0)):
         return 1.,1.
     
     #Saving the likelihoods evaluations

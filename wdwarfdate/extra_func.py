@@ -4,30 +4,31 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, 
                      final_mass, high_perc, low_perc, datatype='log'):
 
-    if(datatype=='log'):
-        ms_age_median = np.nanpercentile(ln_ms_age,50)
-        ms_age_err_low = ms_age_median - np.nanpercentile(ln_ms_age,low_perc)
-        ms_age_err_high = np.nanpercentile(ln_ms_age,high_perc) - ms_age_median
-        
-        cooling_age_median = np.nanpercentile(ln_cooling_age,50)
-        cooling_age_err_low = cooling_age_median - np.nanpercentile(ln_cooling_age,low_perc)
-        cooling_age_err_high = np.nanpercentile(ln_cooling_age,high_perc) - cooling_age_median
-        
-        total_age_median = np.nanpercentile(ln_total_age,50)
-        total_age_err_low = total_age_median - np.nanpercentile(ln_total_age,low_perc)
-        total_age_err_high = np.nanpercentile(ln_total_age,high_perc) - total_age_median
-        
-        initial_mass_median = np.nanpercentile(initial_mass,50)
-        initial_mass_err_low = initial_mass_median - np.nanpercentile(initial_mass,low_perc)
-        initial_mass_err_high = np.nanpercentile(initial_mass,high_perc) - initial_mass_median
-        
-        final_mass_median = np.nanpercentile(final_mass,50)
-        final_mass_low = final_mass_median - np.nanpercentile(final_mass,low_perc)
-        final_mass_high = np.nanpercentile(final_mass,high_perc) - final_mass_median
-        
+#    if(datatype=='log'):
+    ms_age_median = np.nanpercentile(ln_ms_age,50)
+    ms_age_err_low = ms_age_median - np.nanpercentile(ln_ms_age,low_perc)
+    ms_age_err_high = np.nanpercentile(ln_ms_age,high_perc) - ms_age_median
+    
+    cooling_age_median = np.nanpercentile(ln_cooling_age,50)
+    cooling_age_err_low = cooling_age_median - np.nanpercentile(ln_cooling_age,low_perc)
+    cooling_age_err_high = np.nanpercentile(ln_cooling_age,high_perc) - cooling_age_median
+    
+    total_age_median = np.nanpercentile(ln_total_age,50)
+    total_age_err_low = total_age_median - np.nanpercentile(ln_total_age,low_perc)
+    total_age_err_high = np.nanpercentile(ln_total_age,high_perc) - total_age_median
+    
+    initial_mass_median = np.nanpercentile(initial_mass,50)
+    initial_mass_err_low = initial_mass_median - np.nanpercentile(initial_mass,low_perc)
+    initial_mass_err_high = np.nanpercentile(initial_mass,high_perc) - initial_mass_median
+    
+    final_mass_median = np.nanpercentile(final_mass,50)
+    final_mass_low = final_mass_median - np.nanpercentile(final_mass,low_perc)
+    final_mass_high = np.nanpercentile(final_mass,high_perc) - final_mass_median
+    '''
     elif(datatype=='Gyr'):
         ms_age_median = np.nanpercentile((10**ln_ms_age)/1e9,50)
         ms_age_err_low = ms_age_median - np.nanpercentile((10**ln_ms_age)/1e9,low_perc)
@@ -69,21 +70,22 @@ def calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass,
         final_mass_median = np.nanpercentile(final_mass,50)
         final_mass_low = final_mass_median - np.nanpercentile(final_mass,low_perc)
         final_mass_high = np.nanpercentile(final_mass,high_perc) - final_mass_median
-        
+    '''    
     return [ms_age_median,ms_age_err_low,ms_age_err_high,
             cooling_age_median,cooling_age_err_low,cooling_age_err_high,
             total_age_median,total_age_err_low,total_age_err_high,
             initial_mass_median,initial_mass_err_low,initial_mass_err_high,
             final_mass_median,final_mass_low,final_mass_high]
-
+    
 def plot_distributions(ms_age,cooling_age,total_age, 
-                       initial_mass, final_mass, datatype, 
+                       initial_mass, final_mass, datatype='log', 
                        high_perc=84, low_perc=16, 
                        comparison=[np.nan], name = 'none'):
 
     results = calc_percentiles(ms_age, cooling_age, total_age, 
-                               initial_mass, final_mass, high_perc, low_perc)
-    
+                               initial_mass, final_mass, high_perc, low_perc,
+                               datatype)
+
     title = r"${{{0:.2f}}}_{{-{1:.2f}}}^{{+{2:.2f}}}$"
     f, (ax1,ax2,ax3,ax4,ax5) = plt.subplots(1,5, figsize=(12,3))
     ax1.hist(ms_age[~np.isnan(ms_age)],bins=20)
@@ -145,3 +147,16 @@ def plot_distributions(ms_age,cooling_age,total_age,
         plt.savefig(name + '_distributions.png',dpi=300)
     plt.show()
     plt.close(f)
+
+
+def check_ranges(teff,logg,spt):
+    if(spt=='DA'):
+        if(np.logical_or(teff>150000,teff<2500)):
+            print("Warning: Effective temperature is outside the range covered by the cooling models from http://www.astro.umontreal.ca/~bergeron/CoolingModels/ 2500 K < Teff < 150000 K")
+        if(np.logical_or(logg>9,teff<7)):
+            print("Warning: Surface gravity is outside the range covered by the cooling models from http://www.astro.umontreal.ca/~bergeron/CoolingModels/ 7 < logg < 9")
+    elif(spt=='DB'):
+        if(np.logical_or(teff>150000,teff<3250)):
+            print("Warning: Effective temperature is outside the range covered by the cooling models from http://www.astro.umontreal.ca/~bergeron/CoolingModels/ 3250 K < Teff < 150000 K")
+        if(np.logical_or(logg>9,teff<7)):
+            print("Warning: Surface gravity is outside the range covered by the cooling models from http://www.astro.umontreal.ca/~bergeron/CoolingModels/ 7 < logg < 9")

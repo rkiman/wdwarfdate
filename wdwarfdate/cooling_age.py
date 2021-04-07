@@ -41,11 +41,15 @@ def get_cooling_model(model_wd):
         filepath = os.path.join(path1,path)
         table_model = np.loadtxt(filepath)
     
+
     model_T = table_model[:,0]
     model_logg = table_model[:,1]
-    model_age = np.log10(table_model[:,40])
+    model_age = np.array([np.log10(x) if x>0 else -1 for x in table_model[:,43]])
     model_mass = table_model[:,2]
-
+    
+    #Removing -inf from model because interpolation doesn't work with them
+    #model_age[np.isinf(model_age)] = -1
+    
     #Interpolate a model to calculate teff and logg from cooling age and 
     #final mass
     f_teff = interpolate.LinearNDInterpolator((model_mass,model_age),
@@ -85,20 +89,24 @@ def calc_cooling_age(teff_dist,logg_dist,N,model):
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1,path)
         table_model = np.loadtxt(filepath)
-        rows = 51
+        rows = 61
         
     if(model == 'DB'):
         path = 'Models/cooling_models/Table_DB'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1,path)
         table_model = np.loadtxt(filepath)
-        rows = 62
+        rows = 72
     
     
+        
     model_T = table_model[:,0]
     model_logg = table_model[:,1]
-    model_age = table_model[:,40]
+    model_age = table_model[:,43]
     model_mass = table_model[:,2]
+    
+    #Removing -inf from model because interpolation doesn't work with them
+    model_age[np.isinf(model_age)] = -1
     
     grid_model_T=model_T.reshape(5,rows)
     grid_model_logg=model_logg.reshape(5,rows)

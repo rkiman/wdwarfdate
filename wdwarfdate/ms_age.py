@@ -100,8 +100,10 @@ def calc_ms_age(initial_mass_dist,feh,vvcrit):
     mask_nan = np.isnan(ms_age_dist)
     ms_age_dist[mask_nan] = -1
     
-    mask = ms_age_dist/1e9 > 13.8
-    ms_age_dist[mask] = np.nan
+    #mask for the prior age less than the current age
+    #of hte universe
+    #mask = ms_age_dist/1e9 > 1e6#13.8
+    #ms_age_dist[mask] = np.nan
     
     ms_age_dist[mask_nan] = np.nan
     

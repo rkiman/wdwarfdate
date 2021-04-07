@@ -39,7 +39,10 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
     
     save_likelihoods_file = wd_path_id +'.txt'
     with open(save_likelihoods_file,'a') as f:
+        #Set names of file columns
+        f.write('#ln_ms_age ln_cooling_age ln_total_age initial_mass final_mass\n')
         models0[3] = f
+        
         #Initialize sampler again but now so it saves likelihood evaluations
         sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_posterior_prob,
                                         args=[teff0,e_teff0,logg0,e_logg0,
@@ -54,6 +57,8 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
         
         # going to run the mcmc in groups of 100 steps
         for x in range(n_steps):
+            if(x%100==0):
+                print("{} steps out of {}".format(x,n_steps))
             p0_new,_,_ = sampler.run_mcmc(p0_new, 100)
             chain = sampler.chain
             # Compute the autocorrelation time so far
@@ -65,6 +70,7 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
             converged = np.all(tau * n_indep_samples < (x+1)*100)
             converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
             if converged:
+                print('Converged')
                 break
             old_tau = tau
         
