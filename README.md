@@ -42,18 +42,18 @@ Getting right to it, let's make and example on how to estimate the ages of a cou
 
 ```
 
-To run *wdwarfdate* we need call the function that calculates ages and choose which method we want to use: *bayesian* of *freq*, as shown below. The *bayesian* method will run a Markov Chain Monte Carlo using [*emcee*](https://emcee.readthedocs.io/en/stable/) until convergence. The *freq* method will generate a gaussian distribution for *teff* and *logg* using the uncertainties as starndard deviation, and pass the full distribution through a chain of models to calculate the total age of the white dwarfs and other parameters described below. To calculate the ages of the two white dwarfs we initiated above using the *bayesian* method we can do something like
+To run *wdwarfdate* we need call the function that calculates ages and choose which method we want to use: *bayesian* of *fast_test*, as shown below. The *bayesian* method will run a Markov Chain Monte Carlo using [*emcee*](https://emcee.readthedocs.io/en/stable/) until convergence. The *fast_test* method will generate a gaussian distribution for *teff* and *logg* using the uncertainties as starndard deviation, and pass the full distribution through a chain of models to calculate the total age of the white dwarfs and other parameters described below. To calculate the ages of the two white dwarfs we initiated above using the *bayesian* method we can do something like
 
 ```python
 results_bayes = wdwarfdate.calc_wd_age(teffs,teffs_err,loggs,loggs_err,
                                        method='bayesian', datatype='Gyr')
 ```
 
-The *bayesian* method produces a better estimation of the uncertainties than the *freq*. However, the *bayesian* method will take a long time to run because it is going to run the MCMC until convergence. The *freq* method is faster so it is recommended to have a first approximation of the ages and their uncertainties. To calculate the ages of white dwarfs in the *freq* mode we can do
+The *bayesian* method produces a better estimation of the uncertainties than the *fast_test*. However, the *bayesian* method will take a long time to run because it is going to run the MCMC until convergence. The *fast_test* method is faster so it is recommended to have a first approximation of the ages and their uncertainties. To calculate the ages of white dwarfs in the *fast_test* mode we can do
 
 ```python
-results_freq = wdwarfdate.calc_wd_age(teffs,teffs_err,loggs,loggs_err,
-                                      method='freq', datatype='Gyr')
+results_fast_test = wdwarfdate.calc_wd_age(teffs,teffs_err,loggs,loggs_err,
+                                      method='fast_test', datatype='Gyr')
 ```
 
 *wdwarfdate* allows us to select which models we want to use for the white dwarfs: the initial-to-final mass relation, DA or DB, and the parameter for the isochrone. As we did not specified the models in this example, the outputs are going to be estimated assuming these are DA white dwarfs, using the Cummings et al. 2018 MIST initial-to-final mass relation and assuming solar metallicity for the progenitor star. Also with the *datatype* option we can select the units of the resulting ages. 
@@ -88,9 +88,9 @@ When we run the *bayesian* method, *wdwarfdate* will also save five files per st
 
 5. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST.txt which contains the likelihood evaluations in each step of the MCMC for all the parameters we are interested in. These are the columns: 'ln_ms_age', 'ln_cooling_age', 'ln_total_age, 'initial_mass' and 'final_mass'.
 
-When we run the *freq* method, *wdwarfdate* will save one file:
+When we run the *fast_test* method, *wdwarfdate* will save one file:
 
-1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_freq_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age), but obtained with the *freq* method described above.
+1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_fast_test_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age), but obtained with the *fast_test* method described above.
 
 For more explanation and examples checkout the [documentation](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
 

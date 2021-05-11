@@ -28,8 +28,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
     e_teff0 : scalar, array. Error in the effective temperature of the white dwarf
     logg0 : scalar, array. Surface gravity of the white dwarf
     e_logg0 : scalar, arraya. Error in surface gravity of the white dwarf
-    method : string. 'bayesian' or 'freq'. Bayesian will run an mcmc and 
-             output the distributions. Freq runs a normal distribution 
+    method : string. 'bayesian' or 'fast_test'. Bayesian will run an mcmc and 
+             output the distributions. fast_test runs a normal distribution 
              centered at the value with a std of the error through all the 
              models chosen.
     model_wd : string. Spectral type of the white dwarf 'DA' or 'DB'. 
@@ -60,10 +60,10 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                      for n_idep_samples*n_calc_auto_corr steps. Only useful in 
                      Bayesian mode.
     n_mc : scalar. Length of the distribution for each parameter. Only 
-           useful in Freq mode.
+           useful in fast_test mode.
     return_distributions : True or False. Adds columns to the outputs with the
                            distributions of each parameter. Only useful in 
-                           Freq mode.
+                           fast_test mode.
     plot: True or Flase. If True, plots and saves the figures describing the 
           result in the path given.
     
@@ -128,8 +128,8 @@ def calc_wd_age(teff0,e_teff0,logg0,e_logg0,method,
                                              plot)
             results.add_row(results_i)
             
-    elif(method=='freq'):
-        results = calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,
+    elif(method=='fast_test'):
+        results = calc_wd_age_fast_test(teff0,e_teff0,logg0,e_logg0,n_mc,
                                    model_wd,feh,vvcrit,model_ifmr,
                                    high_perc,low_perc,datatype,comparison,path,
                                    return_distributions=return_distributions,
@@ -211,11 +211,11 @@ def calc_bayesian_wd_age(teff0,e_teff0,logg0,e_logg0,
                                name = wd_path_id)        
     return results
 
-def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
-                     model_ifmr,high_perc,low_perc,datatype,comparison,path,
-                     return_distributions,plot):
+def calc_wd_age_fast_test(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
+                          model_ifmr,high_perc,low_perc,datatype,comparison,path,
+                          return_distributions,plot):
     '''
-    Calculated white dwarfs ages with a frequentist approch. Starts from normal 
+    Calculated white dwarfs ages with a fast_test approch. Starts from normal 
     dristribution of teff and logg based on the errors and passes the full
     distribution through the same process to get a distribution of ages.
     '''
@@ -327,16 +327,16 @@ def calc_wd_age_freq(teff0,e_teff0,logg0,e_logg0,n_mc,model_wd,feh,vvcrit,
             if(datatype=='yr'):
                 plot_distributions(x3,x4,x5,
                                    x6,x7,high_perc, low_perc, datatype,
-                                   comparison=x8, name = wd_path_id + '_freq')
+                                   comparison=x8, name = wd_path_id + '_fast_test')
             elif(datatype=='Gyr'):
                 plot_distributions(x3/1e9,x4/1e9,x5/1e9,
                                    x6,x7,high_perc, low_perc, datatype,
-                                   comparison=x8, name = wd_path_id + '_freq')
+                                   comparison=x8, name = wd_path_id + '_fast_test')
             elif(datatype=='log'):
                 plot_distributions(np.log10(x3),np.log10(x4),
                                    np.log10(x5),
                                    x6,x7,high_perc, low_perc, datatype,
-                                   comparison=x8, name = wd_path_id + '_freq')
+                                   comparison=x8, name = wd_path_id + '_fast_test')
     
     return results
 
