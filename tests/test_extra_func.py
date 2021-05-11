@@ -10,10 +10,10 @@ def test_calc_percentiles():
     log_dist = np.log10(dist)
     high_perc, low_perc = 84,16
     results = calc_percentiles(log_dist, log_dist, log_dist, dist, 
-                               dist, high_perc, low_perc, datatype='yr')
-    assert np.isclose(results[0],20,atol=.5)
-    assert np.isclose(results[3],20,atol=.5)
-    assert np.isclose(results[6],20,atol=.5)
+                               dist, high_perc, low_perc, datatype='log')
+    assert np.isclose(results[0],np.log10(20),atol=.5)
+    assert np.isclose(results[3],np.log10(20),atol=.5)
+    assert np.isclose(results[6],np.log10(20),atol=.5)
     
 
 
