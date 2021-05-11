@@ -53,7 +53,7 @@ The *bayesian* method produces a better estimation of the uncertainties than the
 
 ```python
 results_fast_test = wdwarfdate.calc_wd_age(teffs,teffs_err,loggs,loggs_err,
-                                      method='fast_test', datatype='Gyr')
+                                           method='fast_test', datatype='Gyr')
 ```
 
 *wdwarfdate* allows us to select which models we want to use for the white dwarfs: the initial-to-final mass relation, DA or DB, and the parameter for the isochrone. As we did not specified the models in this example, the outputs are going to be estimated assuming these are DA white dwarfs, using the Cummings et al. 2018 MIST initial-to-final mass relation and assuming solar metallicity for the progenitor star. Also with the *datatype* option we can select the units of the resulting ages. 
