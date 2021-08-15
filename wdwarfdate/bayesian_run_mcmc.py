@@ -78,7 +78,7 @@ def run_mcmc(teff0, e_teff0, logg0, e_logg0, models0,
             old_tau = tau
 
         # Plot convergence
-        if plot == True:
+        if plot:
             N = 100 * np.arange(1, index + 1)
             plt.plot(N, N / 100.0, "--k", label=r"$\tau = N/100$")
             plt.loglog(N, autocorr[:index], "-")

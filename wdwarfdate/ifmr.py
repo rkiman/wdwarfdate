@@ -11,7 +11,7 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
     ----------
     initial_mass : float. Initial mass of the progenitor of the white dwarf.
     ifmr_model : string. Initial to final mass relation model. Can be
-                 'Cummings_2018_MIST', 'Cummings_2018_PARSEC',
+                 'Marigo_2020', 'Cummings_2018_MIST', 'Cummings_2018_PARSEC',
                  'Salaris_2009' or 'Williams_2009'.
     min_initial_mass_mist : float. Minimum initial mass in the MIST isochrone.
     max_initial_mass_mist : float. Maximum initial mass in the MIST isochrone.
@@ -32,9 +32,11 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on MIST isochrones
         '''
-        mask1 = (min_initial_mass_mist <= initial_mass) * (initial_mass < 2.85)
+        mask1 = ((max([min_initial_mass_mist, 0.83]) <= initial_mass)
+                 * (initial_mass < 2.85))
         mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
-        mask3 = (3.60 <= initial_mass) * (initial_mass < max_initial_mass_mist)
+        mask3 = ((3.60 <= initial_mass)
+                 * (initial_mass < (min([max_initial_mass_mist, 7.20]))))
         final_mass[mask1] = initial_mass[mask1] * 0.08 + 0.489
         final_mass[mask2] = initial_mass[mask2] * 0.187 + 0.184
         final_mass[mask3] = initial_mass[mask3] * 0.107 + 0.471
@@ -45,9 +47,11 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on PARSEC isochrones
         '''
-        mask1 = (0.87 <= initial_mass) * (initial_mass < 2.8)
+        mask1 = ((max([min_initial_mass_mist, 0.87]) <= initial_mass)
+                 * (initial_mass < 2.8))
         mask2 = (2.8 <= initial_mass) * (initial_mass < 3.65)
-        mask3 = (3.65 <= initial_mass) * (initial_mass < 8.20)
+        mask3 = ((3.65 <= initial_mass)
+                 * (initial_mass < (min([max_initial_mass_mist, 8.20]))))
         final_mass[mask1] = initial_mass[mask1] * 0.0873 + 0.476
         final_mass[mask2] = initial_mass[mask2] * 0.181 + 0.210
         final_mass[mask3] = initial_mass[mask3] * 0.0835 + 0.565
@@ -56,8 +60,9 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         Initial-Final mass relation from 
         Salaris, M., et al., Astrophys. J. 692, 1013–1032 (2009).
         '''
-        mask1 = (1.7 <= initial_mass) * (initial_mass < 4)
-        mask2 = (4 <= initial_mass)
+        mask1 = ((max([min_initial_mass_mist, 1.7]) <= initial_mass)
+                 * (initial_mass < 4))
+        mask2 = (4 <= initial_mass) * (initial_mass < max_initial_mass_mist)
         final_mass[mask1] = initial_mass[mask1] * 0.134 + 0.331
         final_mass[mask2] = initial_mass[mask2] * 0.047 + 0.679
     elif ifmr_model == 'Williams_2009':
@@ -78,11 +83,13 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on MIST isochrones for masses > 3.65.
         '''
-        mask1 = (min_initial_mass_mist <= initial_mass) * (initial_mass <= 1.51)
+        mask1 = (((max([min_initial_mass_mist, 0.83])) <= initial_mass)
+                * (initial_mass <= 1.51))
         mask2 = (1.51 < initial_mass) * (initial_mass <= 1.845)
         mask3 = (1.845 < initial_mass) * (initial_mass <= 2.21)
         mask4 = (2.21 < initial_mass) * (initial_mass <= 3.65)
-        mask5 = (3.65 < initial_mass) * (initial_mass < max_initial_mass_mist)
+        mask5 = ((3.65 < initial_mass)
+                 * (initial_mass < (min([max_initial_mass_mist, 7.20]))))
         final_mass[mask1] = initial_mass[mask1] * 0.103 + 0.447
         final_mass[mask2] = initial_mass[mask2] * 0.399 + 0.001
         final_mass[mask3] = initial_mass[mask3] * (-0.342) + 1.367
@@ -100,8 +107,8 @@ def calc_initial_mass(model_ifmr, final_mass_dist):
     Parameters
     ----------
     model_ifmr : string. Initial to final mass relation model. Can be
-                 'Cummings_2018_MIST', 'Cummings_2018_PARSEC'
-                 or 'Salaris_2009'.
+                 'Cummings_2018_MIST', 'Cummings_2018_PARSEC',
+                 'Salaris_2009', 'Williams_2009'.
     final_mass_dist : list of arrays. List of final mass distributions
                       for each white dwarf.
 
@@ -118,17 +125,17 @@ def calc_initial_mass(model_ifmr, final_mass_dist):
         '''
         Uses initial-final mass relation from 
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
-        to calculte progenitor's mass from the white dwarf mass.
+        to calculate progenitor's mass from the white dwarf mass.
         '''
         for final_mass_dist_i in final_mass_dist:
             initial_mass_dist_i = np.ones(n_mc) * np.nan
             for j in range(n_mc):
                 fm_dist_j = final_mass_dist_i[j]
-                if ((0.5554 < fm_dist_j) and (fm_dist_j <= 0.717)):
+                if (0.5554 < fm_dist_j) and (fm_dist_j <= 0.717):
                     initial_mass_dist_i[j] = (fm_dist_j - 0.489) / 0.08
-                elif ((0.71695 < fm_dist_j) and (fm_dist_j <= 0.8572)):
+                elif (0.71695 < fm_dist_j) and (fm_dist_j <= 0.8572):
                     initial_mass_dist_i[j] = (fm_dist_j - 0.184) / 0.187
-                elif ((0.8562 < fm_dist_j) and (fm_dist_j <= 1.2414)):
+                elif (0.8562 < fm_dist_j) and (fm_dist_j <= 1.2414):
                     initial_mass_dist_i[j] = (fm_dist_j - 0.471) / 0.107
                 else:
                     0

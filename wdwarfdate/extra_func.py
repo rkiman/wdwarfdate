@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 def calc_percentiles(ln_ms_age, ln_cooling_age, ln_total_age, initial_mass,
                      final_mass, high_perc, low_perc, datatype='log'):
     #    if(datatype=='log'):
+
     ms_age_median = np.nanpercentile(ln_ms_age, 50)
+
     ms_age_err_low = ms_age_median - np.nanpercentile(ln_ms_age, low_perc)
     ms_age_err_high = np.nanpercentile(ln_ms_age, high_perc) - ms_age_median
 
@@ -149,9 +151,11 @@ def plot_distributions(ms_age, cooling_age, total_age,
     ax5.set_title(title.format(results[12], results[13], results[14]))
 
     plt.tight_layout()
-    if name != 'none':
-        plt.savefig(name + '_distributions.png', dpi=300)
-    plt.show()
+    if name == 'none':
+        print('Please provide a name for the file, but for now we will save ' +
+              'it as none')
+    plt.savefig(name + '_distributions.png', dpi=300)
+    #plt.show()
     plt.close(f)
 
 

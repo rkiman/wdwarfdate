@@ -13,23 +13,23 @@ def make_and_save_pgm():
     
     # Hierarchical parameters.
     pgm.add_node("sigma", r"$\sigma _{\rm m}$", 0.2, 3.5, fixed=True)
-    pgm.add_node("prior_ms", r"", 1.4, 6.7, fixed=True)
-    pgm.add_node("prior_cool", r"", 2.4, 6.7, fixed=True)
+    pgm.add_node("prior_ms", r"$p(t_{\rm ms})$", 1.4, 6.7, fixed=True)
+    pgm.add_node("prior_cool", r"p(t_{\rm cool})", 2.4, 6.7, fixed=True)
     
     # Latent variable.
-    pgm.add_node("msage", r"$t_{\rm ms_n}$", 1.4, 6)
-    pgm.add_node("coolingage", r"$t_{\rm cool_n}$", 2.4, 6)
-    pgm.add_node("totalage", r"$t_{\rm tot_n}$", 1.9, 5.3)
-    pgm.add_node("initialmass", r"$m_{\rm i_n}$", 1.4, 5)
-    pgm.add_node("deltam", r"$\Delta_{\rm m_n}$", 0.9, 3.5)
-    pgm.add_node("finalmass_hat", r"$\hat{m_{\rm f_n}}$", 1.4, 4)
-    pgm.add_node("finalmass", r"$m_{\rm f_n}$", 1.4, 3)
-    pgm.add_node("teff", r"$T_{\rm eff_n}$", 1.4, 2)
-    pgm.add_node("logg", r"$\log g_{\rm n}$", 2.4, 2)
+    pgm.add_node("msage", r"$t_{\rm ms}$", 1.4, 6)
+    pgm.add_node("coolingage", r"$t_{\rm cool}$", 2.4, 6)
+    pgm.add_node("totalage", r"$t_{\rm tot}$", 1.9, 5.3)
+    pgm.add_node("initialmass", r"$m_{\rm i}$", 1.4, 5)
+    pgm.add_node("deltam", r"$\Delta_{\rm m}$", 0.9, 3.5)
+    pgm.add_node("finalmass_hat", r"$\hat{m_{\rm f}}$", 1.4, 4)
+    pgm.add_node("finalmass", r"$m_{\rm f}$", 1.4, 3)
+    pgm.add_node("teff", r"$T_{\rm eff}$", 1.4, 2)
+    pgm.add_node("logg", r"$\log g$", 2.4, 2)
     
     # Data.
-    pgm.add_node("teff_obs", r"$T_{\rm eff_n}$", 1.4, 1, observed=True)
-    pgm.add_node("logg_obs", r"$\log g_{\rm n}$", 2.4, 1, observed=True)
+    pgm.add_node("teff_obs", r"$T_{\rm eff}$", 1.4, 1, observed=True)
+    pgm.add_node("logg_obs", r"$\log g$", 2.4, 1, observed=True)
     
     # Add in the edges.
     pgm.add_edge("prior_ms", "msage")
@@ -49,7 +49,7 @@ def make_and_save_pgm():
     pgm.add_edge("logg", "logg_obs")
     
     # And a plate.
-    pgm.add_plate([0.5, 0.5, 2.5, 6], label=r"${\rm n} = 1, \ldots, {\rm N}$", shift=-0.1)
+    #pgm.add_plate([0.5, 0.5, 2.5, 6], label=r"${\rm n} = 1, \ldots, {\rm N}$", shift=-0.1)
     
     # Render and save.
     pgm.render()
