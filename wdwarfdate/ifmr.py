@@ -152,9 +152,9 @@ def calc_initial_mass(model_ifmr, final_mass_dist):
             initial_mass_dist_i = np.ones(n_mc) * np.nan
             for j in range(n_mc):
                 fm_dist_j = final_mass_dist_i[j]
-                if ((0.5588 <= fm_dist_j) and (fm_dist_j <= 0.867)):
+                if (0.5588 <= fm_dist_j) and (fm_dist_j <= 0.867):
                     initial_mass_dist_i[j] = (fm_dist_j - 0.331) / 0.134
-                elif (0.867 < fm_dist_j):
+                elif 0.867 < fm_dist_j:
                     initial_mass_dist_i[j] = (fm_dist_j - 0.679) / 0.047
                 else:
                     0

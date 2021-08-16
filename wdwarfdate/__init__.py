@@ -4,7 +4,7 @@ from .ms_age import *
 from .wdwarfdate import *
 from .make_models_fit import *
 from .bayesian_age import *
-from .bayesian_run_mcmc import *
 from .extra_func import *
 from .make_pgm import *
 from .check_convergence import *
+from .make_plots import *
