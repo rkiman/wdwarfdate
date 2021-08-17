@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from .ifmr import ifmr_bayesian
 log_age_universe = 15
 
 
 def ln_posterior_prob(params, teff, e_teff, logg, e_logg, models):
-    return lnlike(params, teff, e_teff, logg, e_logg, models)
+    like = lnlike(params, teff, e_teff, logg, e_logg, models)
+    return like
 
 
 def lnlike(params, teff, e_teff, logg, e_logg, models):
@@ -49,7 +51,7 @@ def model_teff_logg(params, models):
     # Get the final mass from the initial-final mass relation
     # Return -inf if initial_mass values are not included in the model
     if model_ifmr == 'Cummings_2018_MIST':
-        if initial_mass >= 0.83 - 0.1 or initial_mass < 7.20 + 0.1:
+        if initial_mass >= 7.20 + 0.1 or initial_mass < 0.83 - 0.1:
             return 1., 1.
     elif model_ifmr == 'Cummings_2018_PARSEC':
         if initial_mass >= 8.20 or initial_mass < 0.87:

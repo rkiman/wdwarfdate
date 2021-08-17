@@ -173,7 +173,11 @@ class WhiteDwarf:
         initial_mass = like_eval[:, 3]
         final_mass = like_eval[:, 4]
 
-        assert len(ln_ms_age) == len(ln_total_age)
+        ln_ms_age_like = like_eval[:, 0]
+
+        len1 = len(ln_ms_age[~np.isnan(ln_ms_age)])
+        len2 = len(ln_ms_age_like[~np.isnan(ln_ms_age_like)])
+        assert len1 == len2, f"{len1} not the same as {len2} "
 
         # Calculate percentiles for ms age, cooling age, total age,
         # initial mass and final mass
