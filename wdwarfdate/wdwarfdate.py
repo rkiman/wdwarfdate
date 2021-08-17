@@ -7,6 +7,7 @@ from .cooling_age import calc_cooling_age, get_cooling_model
 from .ifmr import calc_initial_mass
 from .ms_age import calc_ms_age, get_isochrone_model
 from .extra_func import calc_percentiles, plot_distributions, check_ranges
+from .extra_func import calc_dist_percentiles
 from .bayesian_age import ln_posterior_prob
 from .check_convergence import calc_auto_corr_time
 
@@ -17,21 +18,22 @@ class WhiteDwarf:
                  init_params=[], high_perc=84, low_perc=16, datatype='yr',
                  path='results/', nburn_in=1000, max_n=100000,
                  n_indep_samples=100, n_mc=2000, return_distributions=False,
-                 save_plot=False):
+                 save_plots=False, display_plots=True):
         """
         Parameters
         ----------
         teff0 : scalar, array. Effective temperature of the white dwarf
-        e_teff0 : scalar, array. Error in the effective temperature of the white dwarf
+        e_teff0 : scalar, array. Error in the effective temperature of the white
+        dwarf
         logg0 : scalar, array. Surface gravity of the white dwarf
         e_logg0 : scalar, arraya. Error in surface gravity of the white dwarf
-        method : string. 'bayesian' or 'fast_test'. Bayesian will run an mcmc and
-                 output the distributions. fast_test runs a normal distribution
-                 centered at the value with a std of the error through all the
-                 models chosen.
+        method : string. 'bayesian' or 'fast_test'. Bayesian will run an mcmc
+                 and output the distributions. fast_test runs a normal
+                 distribution centered at the value with a std of the error
+                 through all the models chosen.
         model_wd : string. Spectral type of the white dwarf 'DA' or 'DB'.
-        feh : string. Parameter for the isochrone. Can be: 'm4.00','m1.00','p0.00'
-              or 'p0.50'
+        feh : string. Parameter for the isochrone. Can be: 'm4.00','m1.00',
+              'p0.00' or 'p0.50'
         vvcrit : string. Parameter for the isochrone. Can be: '0.0' or '0.4'
         model_ifmr : string. Initial to final mass relation model. Can be
                      'Cummings_2018_MIST', 'Cummings_2018_PARSEC',
@@ -40,26 +42,28 @@ class WhiteDwarf:
                       the mcmc for:
                       [log10 ms age, log10 cooling age, delta m].
                       Only useful in Bayesian mode.
-        high_perc : scalar. Percentage at which the high errors will be calculated.
-        low_perc : scalar. Percentage at which the low errors will be calculated.
-        datatype : string. 'yr', 'Gyr' or 'log'. Units in which the results will be
-                   output.
-        path : string. Name of the folder where all the plots and distribution file
-               will be save. If it doesn't exist, the code will create it.
+        high_perc : scalar. Percentage at which the high errors will be
+                    calculated.
+        low_perc : scalar. Percentage at which the low errors will be
+                   calculated.
+        datatype : string. 'yr', 'Gyr' or 'log'. Units in which the results
+                   will be output.
+        path : string. Name of the folder where all the plots and distribution
+               file will be save. If it doesn't exist, the code will create it.
         nburn_in : scalar. Number of steps for the burn in. Only useful in
                    Bayesian mode.
         max_n : scalar. Maximum number of steps done by the mcmc to estimate
                 parameters. Only useful in Bayesian mode.
-        n_indep_samples : scalar. Number of independent samples. The MCMC will run
-                         for n_idep_samples*n_calc_auto_corr steps. Only useful in
-                         Bayesian mode.
+        n_indep_samples : scalar. Number of independent samples. The MCMC will
+                          run for n_idep_samples*n_calc_auto_corr steps. Only
+                          useful in Bayesian mode.
         n_mc : scalar. Length of the distribution for each parameter. Only
                useful in fast_test mode.
-        return_distributions : True or False. Adds columns to the outputs with the
-                               distributions of each parameter. Only useful in
-                               fast_test mode.
-        plot: True or Flase. If True, plots and saves the figures describing the
-              result in the path given.
+        return_distributions : True or False. Adds columns to the outputs with
+                               the distributions of each parameter. Only useful
+                               in fast_test mode.
+        save_plots: True or Flase. If True, plots and saves the figures
+                   describing the result in the path given.
         """
 
         self.teff = teff0
@@ -89,7 +93,8 @@ class WhiteDwarf:
         self.ndim = 3
         self.nwalkers = 70  # nwalkers > 2*ndim
         self.return_distributions = return_distributions
-        self.save_plot = save_plot
+        self.save_plots = save_plots
+        self.display_plots = display_plots
         self.results = Table(
             names=('ms_age_median', 'ms_age_err_low', 'ms_age_err_high',
                    'cooling_age_median', 'cooling_age_err_low',
@@ -105,6 +110,8 @@ class WhiteDwarf:
             self.logg = np.array([logg0])
             self.e_logg = np.array([e_logg0])
 
+        self.n = len(self.teff)
+
     def calc_wd_age(self):
         # If it doesn't exist, creates a folder to save the plots
         if not os.path.exists(self.path):
@@ -113,26 +120,22 @@ class WhiteDwarf:
         if self.method == 'bayesian':
             for x, y, z, w in zip(self.teff, self.e_teff, self.logg,
                                   self.e_logg):
-                print(f'Running teff:{x} logg:{y}')
-                check_ranges(x, y, self.model_wd)
+                print(f'Running teff:{x} logg:{z}')
+                check_ranges(x, z, self.model_wd)
                 self.teff_i = x
                 self.e_teff_i = y
                 self.logg_i = z
                 self.e_logg_i = w
+
+                # Set name of path and wd models to identif results
+                self.wd_path_id = self.get_wd_path_id()
 
                 results_i = self.calc_bayesian_wd_age()
 
                 self.results.add_row(results_i)
 
         elif self.method == 'fast_test':
-            self.results = calc_wd_age_fast_test(teff0, e_teff0, logg0, e_logg0,
-                                                 n_mc,
-                                                 model_wd, feh, vvcrit,
-                                                 model_ifmr,
-                                                 high_perc, low_perc, datatype,
-                                                 path,
-                                                 return_distributions=return_distributions,
-                                                 plot=plot)
+            self.calc_wd_age_fast_test()
 
     def calc_bayesian_wd_age(self):
         """
@@ -140,9 +143,6 @@ class WhiteDwarf:
         final mass and initial mass of a white dwarf with teff0 and logg0.
         Works for one white dwarf at a time.
         """
-
-        # Set name of path and wd models to identif results
-        self.wd_path_id = self.get_wd_path_id()
 
         # Interpolates models for cooling age and main sequence age
         cooling_models = get_cooling_model(self.model_wd)
@@ -193,10 +193,11 @@ class WhiteDwarf:
                                    initial_mass, final_mass,
                                    self.high_perc, self.low_perc)
 
-        if self.save_plot:
+        if self.save_plots:
             # Plot corner plot with results from EMCEE for MS age, Total age,
             # and delta m.
-            self.plot_results_mcmc(self.chain, self.ndim, self.wd_path_id)
+            self.plot_results_mcmc_traces()
+            self.plot_results_mcmc_corner()
 
             # Plot distribution for all the white dwarf and progenitor
             # parameters
@@ -215,7 +216,7 @@ class WhiteDwarf:
 
             # Plot autocorrelation as a function of steps to confirm convergence
             self.plot_autocorr()
-            
+
         return results
 
     def get_wd_path_id(self):
@@ -278,7 +279,7 @@ class WhiteDwarf:
         # Initialize walkers
         p0 = np.array([self.init_params
                        + np.random.uniform(-.05, .05, 3) for i in
-                       range(nwalkers)])
+                       range(self.nwalkers)])
 
         # Initialize sampler
         sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim,
@@ -324,7 +325,7 @@ class WhiteDwarf:
                 index += 1
 
                 # Check convergence
-                converged = np.all(tau * n_indep_samples < (x + 1) * 100)
+                converged = np.all(tau * self.n_indep_samples < (x + 1) * 100)
                 converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
                 if converged:
                     print('Converged')
@@ -350,201 +351,144 @@ class WhiteDwarf:
         plt.savefig(self.wd_path_id + '_corr_time.png')
         plt.close()
 
-    def plot_results_mcmc(self):
-
-        f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
-        for i in range(50):
-            ax1.plot(self.chain[i, :, 0], color='k', alpha=0.05)
-            ax1.axhline(y=np.median(self.flat_samples[:, 0]), color='k')
-        ax1.set_ylabel(r'$\log_{10}(t_{\rm ms}/{\rm yr})$')
-
-        for i in range(50):
-            ax2.plot(self.chain[i, :, 1], color='k', alpha=0.05)
-            ax2.axhline(y=np.median(self.flat_samples[:, 1]), color='k')
-        ax2.set_ylabel(r'$\log_{10}(t_{\rm cool}/{\rm yr})$')
-
-        for i in range(50):
-            ax3.plot(self.chain[i, :, 2], color='k', alpha=0.05)
-            ax3.axhline(y=np.median(self.flat_samples[:, 2]), color='k')
-        ax3.set_ylabel(r'$\Delta_{\rm m}$')
-        plt.tight_layout()
-        plt.savefig(wd_path_id + '_walkers.png')
-        plt.close(f)
+    def plot_results_mcmc_traces(self):
 
         labels = [r'$\log_{10}(t_{\rm ms}/{\rm yr})$',
-                  r'$\log_{10}(t_{\rm cool}/{\rm yr})$',
-                  r'$\Delta _{\rm m}$']
+                  r'$\log_{10}(t_{\rm cool}/{\rm yr})$', r'$\Delta_{\rm m}$']
+        f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 3))
+        for ax, j, label in zip([ax1, ax2, ax3], range(3), labels):
+            for i in range(50):
+                ax.plot(self.chain[i, :, j], color='k', alpha=0.05)
+                ax.axhline(y=np.median(self.flat_samples[:, j]), color='k')
+            ax.set_ylabel(label)
+        plt.tight_layout()
+        plt.savefig(self.wd_path_id + '_trace.png')
+        plt.close(f)
+
+    def plot_results_mcmc_corner(self):
+        labels = [r'$\log_{10}(t_{\rm ms}/{\rm yr})$',
+                  r'$\log_{10}(t_{\rm cool}/{\rm yr})$', r'$\Delta _{\rm m}$']
 
         fig = corner.corner(self.flat_samples, labels=labels,
                             quantiles=[.16, .50, .84],
                             show_titles=True, title_kwargs={"fontsize": 12})
-        fig.savefig(self.d_path_id + '_corner_plot.png', dpi=300)
+        fig.savefig(self.wd_path_id + '_corner_plot.png', dpi=300)
         plt.close(fig)
 
+    def calc_wd_age_fast_test(self):
+        """
+        Calculated white dwarfs ages with a fast_test approach. Starts from normal
+        distribution of teff and logg based on the errors and passes the full
+        distribution through the same process to get a distribution of ages.
+        """
 
-def calc_wd_age_fast_test(teff0, e_teff0, logg0, e_logg0, n_mc, model_wd, feh,
-                          vvcrit,
-                          model_ifmr, high_perc, low_perc, datatype,
-                          path,
-                          return_distributions, plot):
-    """
-    Calculated white dwarfs ages with a fast_test approach. Starts from normal
-    distribution of teff and logg based on the errors and passes the full
-    distribution through the same process to get a distribution of ages.
-    """
+        # Set up the distribution of teff and logg
+        teff_dist, logg_dist = [], []
+        for i in range(self.n):
+            if np.isnan(self.teff[i] + self.e_teff[i] + self.logg[i]
+                        + self.e_logg[i]):
+                teff_dist.append(np.nan)
+                logg_dist.append(np.nan)
+            else:
+                check_ranges(self.teff[i], self.logg[i], self.model_wd)
+                teff_dist.append(np.random.normal(self.teff[i], self.e_teff[i],
+                                                  self.n_mc))
+                logg_dist.append(np.random.normal(self.logg[i], self.e_logg[i],
+                                                  self.n_mc))
+        teff_dist, logg_dist = np.array(teff_dist), np.array(logg_dist)
 
-    if not isinstance(teff0, np.ndarray):
-        teff0 = np.array([teff0])
-        e_teff0 = np.array([e_teff0])
-        logg0 = np.array([logg0])
-        e_logg0 = np.array([e_logg0])
+        # From teff and logg estimate cooling age and final mass
+        res = calc_cooling_age(teff_dist, logg_dist, self.n,
+                               model=self.model_wd)
+        cooling_age_dist, final_mass_dist = res
+        # From final mass estimate initial mass
+        initial_mass_dist = calc_initial_mass(self.model_ifmr, final_mass_dist)
+        # From initial mass estimate main sequence age
+        ms_age_dist = calc_ms_age(initial_mass_dist, feh=self.feh,
+                                  vvcrit=self.vvcrit)
+        # Estimate total age adding cooling age and main sequence age
+        total_age_dist = cooling_age_dist + ms_age_dist
 
-    N = len(teff0)
+        # Replace all the ages which are higher than the age of the universe
+        # with nans
+        mask_nan = np.isnan(total_age_dist)
+        total_age_dist[mask_nan] = -1
 
-    # Set up the distribution of teff and logg
-    teff_dist, logg_dist = [], []
-    for i in range(N):
-        if np.isnan(teff0[i] + e_teff0[i] + logg0[i] + e_logg0[i]):
-            teff_dist.append(np.nan)
-            logg_dist.append(np.nan)
+        mask = total_age_dist / 1e9 > 13.8
+        total_age_dist[mask] = np.nan
+        total_age_dist[mask_nan] = np.nan
+
+        cooling_age_dist[mask] = np.copy(cooling_age_dist[mask]) * np.nan
+        final_mass_dist[mask] = np.copy(final_mass_dist[mask]) * np.nan
+        initial_mass_dist[mask] = np.copy(initial_mass_dist[mask]) * np.nan
+        ms_age_dist[mask] = np.copy(ms_age_dist[mask]) * np.nan
+        total_age_dist[mask] = np.copy(total_age_dist[mask]) * np.nan
+
+        # Calculate percentiles and save results
+
+        if self.datatype == 'Gyr':
+            ms_age_dummy = ms_age_dist / 1e9
+            cooling_age_dummy = cooling_age_dist / 1e9
+            total_age_dummy = total_age_dist / 1e9
+        elif self.datatype == 'log':
+            ms_age_dummy = np.log10(ms_age_dist)
+            cooling_age_dummy = np.log10(cooling_age_dist)
+            total_age_dummy = np.log10(total_age_dist)
         else:
-            check_ranges(teff0[i], logg0[i], model_wd)
-            teff_dist.append(np.random.normal(teff0[i], e_teff0[i], n_mc))
-            logg_dist.append(np.random.normal(logg0[i], e_logg0[i], n_mc))
-    teff_dist, logg_dist = np.array(teff_dist), np.array(logg_dist)
+            ms_age_dummy = ms_age_dist
+            cooling_age_dummy = cooling_age_dist
+            total_age_dummy = total_age_dist
 
-    # From teff and logg get ages
-    cooling_age_dist, final_mass_dist = calc_cooling_age(teff_dist, logg_dist,
-                                                         N, model=model_wd)
-    initial_mass_dist = calc_initial_mass(model_ifmr, final_mass_dist)
-    ms_age_dist = calc_ms_age(initial_mass_dist, feh=feh, vvcrit=vvcrit)
-    total_age_dist = cooling_age_dist + ms_age_dist
+        self.results = Table()
+        labels = ['ms_age', 'cooling_age', 'total_age', 'initial_mass',
+                  'final_mass']
+        self.distributions = [ms_age_dummy, cooling_age_dummy, total_age_dummy,
+                              initial_mass_dist, final_mass_dist]
 
-    # Replace all the ages which are higher than the age of the universe with
-    # nans
-    mask_nan = np.isnan(total_age_dist)
-    total_age_dist[mask_nan] = -1
+        for label, dist in zip(labels, self.distributions):
+            median, high_err, low_err = calc_dist_percentiles(dist,
+                                                              self.high_perc,
+                                                              self.low_perc)
+            self.results[label + '_median'] = median
+            self.results[label + '_err_low'] = low_err
+            self.results[label + '_err_high'] = high_err
 
-    mask = total_age_dist / 1e9 > 13.8
-    total_age_dist[mask] = np.nan
+        if self.return_distributions:
+            for label, dist in zip(labels, self.distributions):
+                self.results[label + '_dist'] = dist
 
-    total_age_dist[mask_nan] = np.nan
+        if self.save_plots:
+            self.plot_distributions_fast_test()
 
-    cooling_age_dist[mask] = np.copy(cooling_age_dist[mask]) * np.nan
-    final_mass_dist[mask] = np.copy(final_mass_dist[mask]) * np.nan
-    initial_mass_dist[mask] = np.copy(initial_mass_dist[mask]) * np.nan
-    ms_age_dist[mask] = np.copy(ms_age_dist[mask]) * np.nan
-    total_age_dist[mask] = np.copy(total_age_dist[mask]) * np.nan
+    def plot_distributions_fast_test(self):
+        # Plot resulting distributions
 
-    # Calculate percentiles and save results
-    results = Table()
+        for i in range(len(self.teff)):
 
-    median, high_err, low_err = calc_dist_percentiles(final_mass_dist, 'none',
-                                                      high_perc, low_perc)
-    results['final_mass_median'] = median
-    results['final_mass_err_high'] = high_err
-    results['final_mass_err_low'] = low_err
+            x1 = self.teff[i]
+            x2 = self.logg[i]
+            x3 = np.array(self.distributions[0][i])
+            x4 = np.array(self.distributions[1][i])
+            x5 = np.array(self.distributions[2][i])
+            x6 = np.array(self.distributions[3][i])
+            x7 = np.array(self.distributions[4][i])
+            x8 = self.results[i]
 
-    median, high_err, low_err = calc_dist_percentiles(initial_mass_dist, 'none',
-                                                      high_perc, low_perc)
-    results['initial_mass_median'] = median
-    results['initial_mass_err_high'] = high_err
-    results['initial_mass_err_low'] = low_err
+            # Set name of path and wd models to identif results
+            self.teff_i = x1
+            self.logg_i = x2
+            self.wd_path_id = self.get_wd_path_id()
 
-    median, high_err, low_err = calc_dist_percentiles(cooling_age_dist,
-                                                      datatype,
-                                                      high_perc, low_perc)
-    results['cooling_age_median'] = median
-    results['cooling_age_err_high'] = high_err
-    results['cooling_age_err_low'] = low_err
+            print(f'Running teff:{x1} logg:{x2}')
 
-    median, high_err, low_err = calc_dist_percentiles(ms_age_dist, datatype,
-                                                      high_perc, low_perc)
-    results['ms_age_median'] = median
-    results['ms_age_err_high'] = high_err
-    results['ms_age_err_low'] = low_err
-
-    median, high_err, low_err = calc_dist_percentiles(total_age_dist, datatype,
-                                                      high_perc, low_perc)
-    results['total_age_median'] = median
-    results['total_age_err_high'] = high_err
-    results['total_age_err_low'] = low_err
-
-    if return_distributions:
-        results['final_mass_dist'] = final_mass_dist
-        results['initial_mass_dist'] = initial_mass_dist
-        if datatype == 'yr':
-            results['cooling_age_dist'] = cooling_age_dist
-            results['ms_age_dist'] = ms_age_dist
-            results['total_age_dist'] = total_age_dist
-        elif datatype == 'Gyr':
-            results['cooling_age_dist'] = cooling_age_dist / 1e9
-            results['ms_age_dist'] = ms_age_dist / 1e9
-            results['total_age_dist'] = total_age_dist / 1e9
-        elif datatype == 'log':
-            results['cooling_age_dist'] = np.log10(cooling_age_dist)
-            results['ms_age_dist'] = np.log10(ms_age_dist)
-            results['total_age_dist'] = np.log10(total_age_dist)
-
-    # Plot resulting distributions
-    if plot == True:
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        for x1, x2, x3, x4, x5, x6, x7 in zip(teff0, logg0, ms_age_dist,
-                                              cooling_age_dist,
-                                              total_age_dist,
-                                              initial_mass_dist,
-                                              final_mass_dist):
-            wd_path_id = get_wd_path_id(x1, x2, feh, vvcrit, model_wd,
-                                        model_ifmr, path)
-            x3 = np.array(x3)
-            x4 = np.array(x4)
-            x5 = np.array(x5)
-            x6 = np.array(x6)
-            x7 = np.array(x7)
-
-            if datatype == 'yr':
-                plot_distributions(x3, x4, x5,
-                                   x6, x7, high_perc=high_perc,
-                                   low_perc=low_perc,
-                                   datatype=datatype,
-                                   name=wd_path_id + '_fast_test')
-            elif datatype == 'Gyr':
-                plot_distributions(x3 / 1e9, x4 / 1e9, x5 / 1e9,
-                                   x6, x7, high_perc, low_perc, datatype,
-                                   name=wd_path_id + '_fast_test')
-            elif datatype == 'log':
-                plot_distributions(np.log10(x3), np.log10(x4),
-                                   np.log10(x5),
-                                   x6, x7, high_perc, low_perc, datatype,
-                                   name=wd_path_id + '_fast_test')
-
-    return results
-
-
-def calc_dist_percentiles(dist, datatype, high_perc, low_perc):
-    if datatype == 'yr' or datatype == 'none':
-        median = np.array([np.nanpercentile(x, 50) for x in dist])
-        h = [np.nanpercentile(x, high_perc) - np.nanpercentile(x, 50) for x in
-             dist]
-        l = [np.nanpercentile(x, 50) - np.nanpercentile(x, low_perc) for x in
-             dist]
-        h, l = np.array(h), np.array(l)
-    elif datatype == 'Gyr':
-        dist1 = dist / 1e9
-        median = np.array([np.nanpercentile(x, 50) for x in dist1])
-        h = [np.nanpercentile(x, high_perc) - np.nanpercentile(x, 50) for x in
-             dist1]
-        l = [np.nanpercentile(x, 50) - np.nanpercentile(x, low_perc) for x in
-             dist1]
-        h, l = np.array(h), np.array(l)
-    elif datatype == 'log':
-        dist1 = np.log10(dist)
-        median = np.array([np.nanpercentile(x, 50) for x in dist1])
-        h = [np.nanpercentile(x, high_perc) - np.nanpercentile(x, 50) for x in
-             dist1]
-        l = [np.nanpercentile(x, 50) - np.nanpercentile(x, low_perc) for x in
-             dist1]
-        h, l = np.array(h), np.array(l)
-    return median, h, l
+            if self.datatype == 'yr':
+                x3, x4, x5 = np.log10(x3), np.log10(x4), np.log10(x5)
+                res_dummy = calc_percentiles(x3, x4, x5, x6, x7,
+                                             self.high_perc, self.low_perc)
+                plot_distributions(x3, x4, x5, x6, x7, self.datatype, res_dummy,
+                                   display=self.display_plots,
+                                   name=self.wd_path_id + '_fast_test')
+            else:
+                plot_distributions(x3, x4, x5, x6, x7, self.datatype, x8,
+                                   display=self.display_plots,
+                                   name=self.wd_path_id + '_fast_test')

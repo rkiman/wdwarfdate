@@ -13,8 +13,8 @@ def calc_percentiles(ms_age, cooling_age, total_age, initial_mass,
     for distribution in [ms_age, cooling_age, total_age, initial_mass,
                          final_mass]:
         dist_median = np.nanpercentile(distribution, 50)
-        dist_err_low = dist_median - np.nanpercentile(dist_median, low_perc)
-        dist_err_high = np.nanpercentile(dist_median, high_perc) - dist_median
+        dist_err_low = dist_median - np.nanpercentile(distribution, low_perc)
+        dist_err_high = np.nanpercentile(distribution, high_perc) - dist_median
 
         for x in [dist_median, dist_err_low, dist_err_high]:
             res_percentiles.append(x)
@@ -22,9 +22,17 @@ def calc_percentiles(ms_age, cooling_age, total_age, initial_mass,
     return res_percentiles
 
 
+def calc_dist_percentiles(dist, high_perc, low_perc):
+    median = np.array([np.nanpercentile(x, 50) for x in dist])
+    err_h = [np.nanpercentile(x, high_perc) for x in dist]
+    err_l = [np.nanpercentile(x, low_perc) for x in dist]
+    err_h, err_l = np.array(err_h), np.array(err_l)
+    return median, err_h-median, median-err_l
+
+
 def plot_distributions(ms_age, cooling_age, total_age,
                        initial_mass, final_mass, datatype,
-                       results, name='none'):
+                       results, display, name='none'):
 
     title = r"${{{0:.2f}}}_{{-{1:.2f}}}^{{+{2:.2f}}}$"
     f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(12, 3))
@@ -41,18 +49,23 @@ def plot_distributions(ms_age, cooling_age, total_age,
 
     distributions = [ms_age, cooling_age, total_age, initial_mass, final_mass]
 
-    for ax, label, dist, i in zip(axs, labels, distributions, range(5)):
+    for ax, label, dist, i in zip(axs, labels, distributions,
+                                  np.arange(0, 15, 3)):
         ax.hist(dist[~np.isnan(dist)], bins=20)
         ax.axvline(x=results[i], color='k')
         ax.axvline(x=results[i] - results[i+1], color='k', linestyle='--')
         ax.axvline(x=results[i] + results[i+2], color='k', linestyle='--')
         ax.set_xlabel(label)
-        ax.set_title(title.format(results[i], results[i+1], results[i+2]))
+        ax.set_title(title.format(np.round(results[i], 2),
+                                  np.round(results[i+1], 2),
+                                  np.round(results[i+2], 2)))
 
     plt.tight_layout()
     if name == 'none':
         print('Please provide a name for the file, but for now we will save ' +
               'it as none')
+    if display:
+        plt.show()
     plt.savefig(name + '_distributions.png', dpi=300)
     plt.close(f)
 

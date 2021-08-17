@@ -7,4 +7,3 @@ from .bayesian_age import *
 from .extra_func import *
 from .make_pgm import *
 from .check_convergence import *
-from .make_plots import *
