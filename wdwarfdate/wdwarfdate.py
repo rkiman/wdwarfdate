@@ -1,10 +1,11 @@
 import numpy as np
 from astropy.table import Table
+import matplotlib.pyplot as plt
 import os
 import emcee
 import corner
 from .cooling_age import calc_cooling_age, get_cooling_model
-from .ifmr import calc_initial_mass
+from .ifmr import calc_initial_mass, ifmr_bayesian
 from .ms_age import calc_ms_age, get_isochrone_model
 from .extra_func import calc_percentiles, plot_distributions, check_ranges
 from .extra_func import calc_dist_percentiles
@@ -13,12 +14,14 @@ from .check_convergence import calc_auto_corr_time
 
 
 class WhiteDwarf:
-    def __init__(self, teff0, e_teff0, logg0, e_logg0, method, model_wd='DA',
-                 feh='p0.00', vvcrit='0.0', model_ifmr='Cummings_2018_MIST',
-                 init_params=[], high_perc=84, low_perc=16, datatype='yr',
-                 path='results/', nburn_in=1000, max_n=100000,
-                 n_indep_samples=100, n_mc=2000, return_distributions=False,
-                 save_plots=False, display_plots=True):
+    def __init__(self, teff0, e_teff0, logg0, e_logg0, method='bayesian',
+                 model_wd='DA', feh='p0.00', vvcrit='0.0',
+                 model_ifmr='Cummings_2018_MIST', init_params=[],
+                 high_perc=84,
+                 low_perc=16, datatype='yr', path='results/', nburn_in=1000,
+                 max_n=100000, n_indep_samples=100, n_mc=2000,
+                 return_distributions=False, save_plots=False,
+                 display_plots=True):
         """
         Parameters
         ----------
@@ -70,6 +73,12 @@ class WhiteDwarf:
         self.e_teff = e_teff0
         self.logg = logg0
         self.e_logg = e_logg0
+        if not isinstance(teff0, np.ndarray):
+            self.teff = np.array([teff0])
+            self.e_teff = np.array([e_teff0])
+            self.logg = np.array([logg0])
+            self.e_logg = np.array([e_logg0])
+        self.n = len(self.teff)
         self.teff_i = 0
         self.e_teff_i = 0
         self.logg_i = 0
@@ -79,7 +88,14 @@ class WhiteDwarf:
         self.feh = feh
         self.vvcrit = vvcrit
         self.model_ifmr = model_ifmr
-        self.init_params = init_params
+        if not init_params:
+            if self.n > 1:
+                self.init_params = [[] for i in range(self.n)]
+            else:
+                self.init_params = [[]]
+        else:
+            self.init_params = init_params
+        self.init_params_i = []
         self.high_perc = high_perc
         self.low_perc = low_perc
         self.datatype = datatype
@@ -104,28 +120,22 @@ class WhiteDwarf:
                    'initial_mass_err_high', 'final_mass_median',
                    'final_mass_err_low', 'final_mass_err_high'))
 
-        if not isinstance(teff0, np.ndarray):
-            self.teff = np.array([teff0])
-            self.e_teff = np.array([e_teff0])
-            self.logg = np.array([logg0])
-            self.e_logg = np.array([e_logg0])
-
-        self.n = len(self.teff)
-
     def calc_wd_age(self):
         # If it doesn't exist, creates a folder to save the plots
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
+        if self.save_plots:
+            if not os.path.exists(self.path):
+                os.makedirs(self.path)
 
         if self.method == 'bayesian':
-            for x, y, z, w in zip(self.teff, self.e_teff, self.logg,
-                                  self.e_logg):
+            for x, y, z, w, q in zip(self.teff, self.e_teff, self.logg,
+                                     self.e_logg, self.init_params):
                 print(f'Running teff:{x} logg:{z}')
                 check_ranges(x, z, self.model_wd)
                 self.teff_i = x
                 self.e_teff_i = y
                 self.logg_i = z
                 self.e_logg_i = w
+                self.init_params_i = q
 
                 # Set name of path and wd models to identif results
                 self.wd_path_id = self.get_wd_path_id()
@@ -145,39 +155,22 @@ class WhiteDwarf:
         """
 
         # Interpolates models for cooling age and main sequence age
-        cooling_models = get_cooling_model(self.model_wd)
-        isochrone_model = get_isochrone_model(feh=self.feh, vvcrit=self.vvcrit)
+        self.cooling_models = get_cooling_model(self.model_wd)
+        self.isochrone_model = get_isochrone_model(feh=self.feh,
+                                                   vvcrit=self.vvcrit)
 
-        self.models0 = [self.model_ifmr, isochrone_model, cooling_models, '']
+        self.models0 = [self.model_ifmr, self.isochrone_model,
+                        self.cooling_models]
 
-        if not self.init_params:
-            self.init_params = self.get_initial_conditions()
-
-        # Check if file exists and remove if it does so it can be filled again
-        if os.path.exists(self.wd_path_id + '.txt'):
-            os.remove(self.wd_path_id + '.txt')
+        if not self.init_params_i:
+            self.init_params_i = self.get_initial_conditions()
 
         # Run emcee to obtain likelihood evaluations of ms age, cooling age,
         # total age, final mass and initial mass
         self.run_emcee()
 
-        ln_ms_age = self.flat_samples[:, 0]
-        ln_cooling_age = self.flat_samples[:, 1]
-
-        # Open file where the likelihood evaluations where saved
-        like_eval = np.loadtxt(self.wd_path_id + '.txt')
-
-        # Use the likelihood evaluations for the dependent parameters
-        # and the posterior for the independent parameters
-        ln_total_age = like_eval[:, 2]
-        initial_mass = like_eval[:, 3]
-        final_mass = like_eval[:, 4]
-
-        ln_ms_age_like = like_eval[:, 0]
-
-        len1 = len(ln_ms_age[~np.isnan(ln_ms_age)])
-        len2 = len(ln_ms_age_like[~np.isnan(ln_ms_age_like)])
-        assert len1 == len2, f"{len1} not the same as {len2} "
+        res = self.get_distributions()
+        ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, final_mass = res
 
         # Calculate percentiles for ms age, cooling age, total age,
         # initial mass and final mass
@@ -193,11 +186,11 @@ class WhiteDwarf:
             res_cool_age = (10 ** ln_cooling_age) / 1e9
             res_tot_age = (10 ** ln_total_age) / 1e9
 
-        results = calc_percentiles(res_ms_age, res_cool_age, res_tot_age,
-                                   initial_mass, final_mass,
-                                   self.high_perc, self.low_perc)
+        results_i = calc_percentiles(res_ms_age, res_cool_age, res_tot_age,
+                                     initial_mass, final_mass,
+                                     self.high_perc, self.low_perc)
 
-        if self.save_plots:
+        if self.display_plots or self.save_plots:
             # Plot corner plot with results from EMCEE for MS age, Total age,
             # and delta m.
             self.plot_results_mcmc_traces()
@@ -205,23 +198,25 @@ class WhiteDwarf:
 
             # Plot distribution for all the white dwarf and progenitor
             # parameters
-            if datatype == 'yr':
+            if self.datatype == 'yr':
                 r_dummy = calc_percentiles(ln_ms_age, ln_cooling_age,
                                            ln_total_age, initial_mass,
                                            final_mass, self.high_perc,
                                            self.low_perc)
                 plot_distributions(ln_ms_age, ln_cooling_age, ln_total_age,
                                    initial_mass, final_mass, self.datatype,
-                                   r_dummy, name=self.wd_path_id)
+                                   r_dummy, self.display_plots, self.save_plots,
+                                   name=self.wd_path_id)
             else:
                 plot_distributions(res_ms_age, res_cool_age, res_tot_age,
                                    initial_mass, final_mass, self.datatype,
-                                   results, name=self.wd_path_id)
+                                   results_i, self.display_plots,
+                                   self.save_plots, name=self.wd_path_id)
 
             # Plot autocorrelation as a function of steps to confirm convergence
             self.plot_autocorr()
 
-        return results
+        return np.array(results_i)
 
     def get_wd_path_id(self):
         # Set the name to identify the results from each white dwarf
@@ -281,7 +276,7 @@ class WhiteDwarf:
         """
 
         # Initialize walkers
-        p0 = np.array([self.init_params
+        p0 = np.array([self.init_params_i
                        + np.random.uniform(-.05, .05, 3) for i in
                        range(self.nwalkers)])
 
@@ -295,54 +290,63 @@ class WhiteDwarf:
         # Run burn in
         p0_new, _, _ = sampler.run_mcmc(p0, self.nburn_in)
 
-        save_likelihoods_file = self.wd_path_id + '.txt'
-        with open(save_likelihoods_file, 'a') as f:
-            # Set names of file columns
-            f.write('#ln_ms_age ln_cooling_age ln_total_age initial_mass '
-                    'final_mass\n')
-            self.models0[3] = f
+        n_steps = int(self.max_n / 100)
+        index = 0
+        autocorr = np.empty(self.max_n)
 
-            # Initialize sampler again but now so it saves likelihood
-            # evaluations
-            sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim,
-                                            ln_posterior_prob,
-                                            args=[self.teff_i, self.e_teff_i,
-                                                  self.logg_i, self.e_logg_i,
-                                                  self.models0])
-            n_steps = int(self.max_n / 100)
+        # This will be useful to testing convergence
+        old_tau = np.inf
 
-            index = 0
-            autocorr = np.empty(self.max_n)
+        # Run MCMC checking convergence every 100 steps
+        for x in range(n_steps):
+            if x % 100 == 0:
+                print(f"{x} steps out of {n_steps}")
+            p0_new, _, _ = sampler.run_mcmc(p0_new, 100)
+            chain = sampler.chain
+            # Compute the autocorrelation time so far
+            tau = calc_auto_corr_time(chain)
+            autocorr[index] = np.mean(tau)
+            index += 1
 
-            # This will be useful to testing convergence
-            old_tau = np.inf
-
-            # Run MCMC checking convergence every 100 steps
-            for x in range(n_steps):
-                if x % 100 == 0:
-                    print(f"{x} steps out of {n_steps}")
-                p0_new, _, _ = sampler.run_mcmc(p0_new, 100)
-                chain = sampler.chain
-                # Compute the autocorrelation time so far
-                tau = calc_auto_corr_time(chain)
-                autocorr[index] = np.mean(tau)
-                index += 1
-
-                # Check convergence
-                converged = np.all(tau * self.n_indep_samples < (x + 1) * 100)
-                converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
-                if converged:
-                    print('Converged')
-                    self.index_conv_i = index
-                    self.autocorr_i = autocorr
-                    break
-                old_tau = tau
+            # Check convergence
+            converged = np.all(tau * self.n_indep_samples < (x + 1) * 100)
+            converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
+            if converged:
+                print('Converged')
+                self.index_conv_i = index
+                self.autocorr_i = autocorr
+                break
+            old_tau = tau
 
             # Obtain chain of samples
             self.chain = sampler.chain[:, :, :]
             self.flat_samples = chain.reshape((-1, self.ndim))
 
-        return 0
+    def get_distributions(self):
+
+        ln_ms_age = self.flat_samples[:, 0]
+        ln_cooling_age = self.flat_samples[:, 1]
+        delta_m = self.flat_samples[:, 2]
+
+        # Calculate the dependent parameters from the independent parameters
+        ln_total_age = np.log10(10 ** ln_ms_age + 10 ** ln_cooling_age)
+
+        f_initial_mass, model_initial_mass, ms_age_model = self.isochrone_model
+
+        min_initial_mass_mist = np.nanmin(model_initial_mass)
+        max_initial_mass_mist = np.nanmax(model_initial_mass)
+
+        initial_mass = f_initial_mass(ln_ms_age)
+        final_mass = ifmr_bayesian(initial_mass, self.model_ifmr,
+                                   min_initial_mass_mist, max_initial_mass_mist)
+
+        final_mass += delta_m
+
+        len1 = len(ln_ms_age[~np.isnan(ln_ms_age)])
+        len2 = len(final_mass[~np.isnan(final_mass)])
+        assert len1 == len2, f"{len1} not the same as {len2} "
+
+        return ln_ms_age, ln_cooling_age, ln_total_age, initial_mass, final_mass
 
     def plot_autocorr(self):
         N = 100 * np.arange(1, self.index_conv_i + 1)
@@ -352,7 +356,10 @@ class WhiteDwarf:
         plt.ylabel(r"mean $\hat{\tau}$")
         plt.legend(fontsize=14)
         plt.grid()
-        plt.savefig(self.wd_path_id + '_corr_time.png')
+        if self.save_plots:
+            plt.savefig(self.wd_path_id + '_corr_time.png')
+        if self.display_plots:
+            plt.show()
         plt.close()
 
     def plot_results_mcmc_traces(self):
@@ -363,10 +370,14 @@ class WhiteDwarf:
         for ax, j, label in zip([ax1, ax2, ax3], range(3), labels):
             for i in range(50):
                 ax.plot(self.chain[i, :, j], color='k', alpha=0.05)
-                ax.axhline(y=np.median(self.flat_samples[:, j]), color='k')
+                ax.axhline(y=np.median(self.flat_samples[:, j]),
+                           color='tab:blue')
             ax.set_ylabel(label)
         plt.tight_layout()
-        plt.savefig(self.wd_path_id + '_trace.png')
+        if self.save_plots:
+            plt.savefig(self.wd_path_id + '_trace.png')
+        if self.display_plots:
+            plt.show()
         plt.close(f)
 
     def plot_results_mcmc_corner(self):
@@ -376,7 +387,10 @@ class WhiteDwarf:
         fig = corner.corner(self.flat_samples, labels=labels,
                             quantiles=[.16, .50, .84],
                             show_titles=True, title_kwargs={"fontsize": 12})
-        fig.savefig(self.wd_path_id + '_corner_plot.png', dpi=300)
+        if self.save_plots:
+            fig.savefig(self.wd_path_id + '_corner_plot.png', dpi=300)
+        if self.display_plots:
+            plt.show()
         plt.close(fig)
 
     def calc_wd_age_fast_test(self):
@@ -490,9 +504,9 @@ class WhiteDwarf:
                 res_dummy = calc_percentiles(x3, x4, x5, x6, x7,
                                              self.high_perc, self.low_perc)
                 plot_distributions(x3, x4, x5, x6, x7, self.datatype, res_dummy,
-                                   display=self.display_plots,
+                                   self.display_plots, self.save_plots,
                                    name=self.wd_path_id + '_fast_test')
             else:
                 plot_distributions(x3, x4, x5, x6, x7, self.datatype, x8,
-                                   display=self.display_plots,
+                                   self.display_plots, self.save_plots,
                                    name=self.wd_path_id + '_fast_test')
