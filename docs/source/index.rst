@@ -2,14 +2,14 @@
 wdwarfdate
 ==========
 
-*wdwarfdate* is an open source code which estimates ages of white dwarfs in a bayesian framework. *wdwarfdate* runs a chain of models assuming single star evolution, to estimate ages of white dwarfs and their uncertainties from an effective temperature and a surface gravity. 
+*wdwarfdate* is an open source Python code which estimates ages of white dwarfs in a Bayesian framework. *wdwarfdate* runs a chain of models assuming single star evolution, to estimate ages of white dwarfs and their uncertainties from an effective temperature and a surface gravity.
 
 .. Contents:
 
 Basic usage
 -----------
 
-Let's set up two white dwarfs with their effective temperature and surface gravity. These two white dwarfs parameters come from Cummings,J.D. et al. (2018).
+Let's set up two white dwarfs with their effective temperature and surface gravity. These two white dwarfs parameters come from Cummings,J.D. et al. (2018). To run *wdwarfdate* we just need to initialize an object :func:`WhiteDwarf` with the parameters indicating the models we want to use. For details on these parameters go to the tutorials in this documentation.
 
 .. code-block:: python
 
@@ -22,66 +22,32 @@ Let's set up two white dwarfs with their effective temperature and surface gravi
     loggs = np.array([8.16,8.526])
     loggs_err = np.array([0.084,0.126])
 
-To estimate the ages of these two white dwarfs we need to use :func:`wdwarfdate.calc_wd_age`. This function will take the effective temperature (*teff*) and surface gravity (*logg*) and use one of two methods to estimate the ages: *bayesian* or *freq*. The *bayesian* method will run a Markov Chain Monte Carlo using `emcee <https://emcee.readthedocs.io/en/latest/>`_, until convergence to maximize a likelohood. The *freq* method will generate a gaussian distribution for *teff* and *logg* using the uncertainties as starndard deviation, and pass the full distribution through a chain of models to calculate the total age of the white dwarfs and other parameters described below. For more information about the two methods see Kiman et al. in prep. 
+    WD = wdwarfdate.WhiteDwarf(teffs,teffs_err,loggs,loggs_err,
+                               model_wd='DA',feh='p0.00',vvcrit='0.0',
+                               model_ifmr = 'Cummings_2018_MIST',
+                               high_perc = 84, low_perc = 16,
+                               datatype='yr',
+                               save_plots=False, display_plots=True)
+    WD.calc_wd_age()
 
-For quick estimation of a white dwarf age, we recommend using the *freq* method, but this method is likely to underestimate the uncertanties. For a better estimation of the age, use the *bayesian* method. To calculate the ages of the two white dwarfs we initiated above, for the *bayesian* method we can do something like
-
-.. code-block:: python
-
-    results_bayes = wdwarfdate.calc_wd_age(teffs,teffs_err,loggs,loggs_err,
-                                           method='bayesian', datatype='Gyr',
-                                           plot=True)
-
-To calculate the ages of white dwarfs in the *freq* mode we can do
-
-.. code-block:: python
-
-    results_freq = wdwarfdate.calc_wd_age(teffs,teffs_err,loggs,loggs_err,
-                                          method='freq',datatype='Gyr',
-                                          return_distributions=True)
-
+The function :func:`WD.calc_wd_age` will take the effective temperature (:math:`T_{\rm eff}`) and surface gravity (:math:`\log g`) given and run `emcee <https://emcee.readthedocs.io/en/latest/>`_ to sample the posterior given by the models, until convergence. To estimate the initial conditions, *wdwarfdate* runs the *fast-test* method, to obtain a quick answer for the parameter estimation. The *fast-test* method will generate a gaussian distribution for :math:`T_{\rm eff}` and :math:`\log g` using the uncertainties as standard deviation, and pass the full distribution through a chain of models to calculate the total age of the white dwarfs and other parameters described below. This method is available to run separately. For more information on how to run *wdwarfdate* see the tutorials and Kiman et al. in prep.
 
 *wdwarfdate* allows us to select which models are going to go into the chain of models for the age estimation:
-1) Cooling tracks for a DA or DB white dwarf
-2) The initial-to-final mass relation
-3) The parameter for the isochrone for the progenitor star 
-As we did not specified the models in this example, the outputs are going to be estimated assuming these are DA white dwarfs, using the Cummings et al. 2018 MIST initial-to-final mass relation and assuming solar metallicity for the progenitor star. Also with the *datatype* option we can select the units of the resulting ages. 
+1. Cooling tracks for a DA or DB white dwarf.
+2. The initial-to-final mass relation.
+3. The parameter for the isochrone for the progenitor star .
+For details on the models available see the page :ref:`Models included` in this documentation and Kiman et al. in prep.
 
-The output :data:`results` of :func:`wdwarfdate.calc_wd_age` will be an astropy Table with one row for each teff and logg given and the following columns:
+The output is saved on the object, and can be accessed by doing :data:`WD.results`. It will be an `astropy Table <https://docs.astropy.org/en/stable/table/index.html>`_ with one row for each :math:`T_{\rm eff}` and :math:`\log g` given. The columns of the Table correspond to median, the difference between median and low percentile (16th unless indicated otherwise), and the difference between high percentile and median (84th unless indicated otherwise) for the following parameters:
 
-- :data:`results['ms_age_median']` Median values of main sequence age distribution of the progenitor of the white dwarf
-- :data:`results['ms_age_err_low']` The difference between the median and the 16th percentile of the main sequence age distribution
-- :data:`results['ms_age_err_high']` The difference between the 84th percentile and the median of the main sequence age distribution
-- :data:`results['cooling_age_median']` Median values of cooling age distribution of the white dwarf
-- :data:`results['cooling_age_err_low']` The difference between the median and the 16th percentile of the cooling age distribution
-- :data:`results['cooling_age_err_high']` The difference between the 84th percentile and the median of the cooling age distribution
-- :data:`results['total_age_median']` Median values of total age distribution of the white dwarf
-- :data:`results['total_age_err_low']` The difference between the median and the 16th percentile of the total age distribution
-- :data:`results['total_age_err_high']` The difference between the 84th percentile and the median of the total age distribution
-- :data:`results['initial_mass_median']` Median values of initial mass distribution, meaning the mass of the progenitor
-- :data:`results['initial_mass_err_low']` The difference between the median and the 16th percentile of the initial mass distribution
-- :data:`results['initial_mass_err_high']` The difference between the 84th percentile and the median of the initial mass distribution
-- :data:`results['final_mass_median']` Median values of final mass distribution, meaning the mass of the white dwarf 
-- :data:`results['final_mass_err_low']` The difference between the median and the 16th percentile of the final mass distribution
-- :data:`results['final_mass_err_high']`: The difference between the 84th percentile and the median of the final mass distribution
+- :data:`ms_age` Median values of main sequence age distribution of the progenitor of the white dwarf
+- :data:`cooling_age` Median values of cooling age distribution of the white dwarf
+- :data:`total_age` Median values of total age distribution of the white dwarf
+- :data:`initial_mass` Median values of initial mass distribution, meaning the mass of the progenitor
+- :data:`final_mass` Median values of final mass distribution, meaning the mass of the white dwarf
 
-When we run the *bayesian* method, *wdwarfdate* will also save five files per star in a folder called results (which the code will create if it doesn't exist):
+When estimate these parameters using *wdwarfdate*, it outputs several plot which are useful to visualize the results and to confirm the convergence of the algorithm. For a detailed description of the output plots, see the Tutorials in this documentation.
 
-1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corner_plot.png which contains the corner plot for the three variables the code samples: main sequence age, cooling age and delta m.
-
-2. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_walkers.png which contains the traces for each walker to confirm convergence of the code.
-
-3. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age).
-
-4. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corr_time.png which contains the result of the autocorrelation time as explained in the `tutorial <https://emcee.readthedocs.io/en/stable/tutorials/autocorr/>`_ by Dan Foreman-Mackey.
-
-5. teff_20250_logg_8.526_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST.txt: Contains the likelihood evaluations in each step of the MCMC for all the parameters we are interested in. We mentioned that the run of the MCMC is done in three stages: burn in, calculation of autocorrelation time and 1000 autocorrelation time steps. This file contains the likelihood evaluations of the last stage only. These are the columns: 'ln_ms_age', 'ln_cooling_age', 'ln_total_age, 'initial_mass' and 'final_mass'.
-
-When we run the *freq* method, *wdwarfdate* will save one file:
-
-1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_freq_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age), but obtained with the *freq* method described above.
-
-For more explanation on how to use *wdwarfdate* see the tutorials.
 
 .. User Guide
 .. ----------
@@ -95,6 +61,7 @@ For more explanation on how to use *wdwarfdate* see the tutorials.
    user/citation
 
 
+.. _Tutorials:
 .. Tutorials
 .. ---------
 
@@ -102,8 +69,8 @@ For more explanation on how to use *wdwarfdate* see the tutorials.
    :maxdepth: 2
    :caption: Tutorials
 
-   tutorials/freq_method.ipynb
    tutorials/bayesian_method.ipynb
+   tutorials/fast_test.ipynb
 
 
 
