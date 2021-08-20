@@ -475,7 +475,7 @@ class WhiteDwarf:
             for label, dist in zip(labels, self.distributions):
                 self.results[label + '_dist'] = dist
 
-        if self.save_plots:
+        if self.save_plots or self.display_plots:
             self.plot_distributions_fast_test()
 
     def plot_distributions_fast_test(self):

@@ -11,9 +11,9 @@ Installation
 To install *wdwarfdate* please do it from the source in GitHub. This can be done with the following lines:
 
 ```bash
-    git clone https://github.com/rkiman/wdwarfdate.git
-    cd wdwarfdate
-    python setup.py install
+git clone https://github.com/rkiman/wdwarfdate.git
+cd wdwarfdate
+python setup.py install
 ```
 
 **Dependences**
@@ -21,7 +21,7 @@ To install *wdwarfdate* please do it from the source in GitHub. This can be done
 To run *wdwarfdate* the following packages are needed: [*NumPy*](https://numpy.org/), [*astropy*](https://www.astropy.org/), [*matplotlib*](https://matplotlib.org/), [*emcee*](https://emcee.readthedocs.io/en/latest/), [*corner*](https://corner.readthedocs.io/en/latest/), [*SciPy*](https://www.scipy.org/) and [*daft*](https://pypi.org/project/daft/). These can be installed with the following line:
 
 ```bash
-    pip install numpy astropy matplotlib emcee corner scipy daft
+pip install numpy astropy matplotlib emcee corner scipy daft
 ```
 
 
@@ -31,15 +31,14 @@ Example usage
 Getting right to it, let's make and example on how to estimate the ages of a couple of white dwarfs using *wdwarfdate*. First let's define the effective temperatures and surface gravity for both white dwarfs. 
 
 ```python
-    import wdwarfdate
-    import numpy as np
+import wdwarfdate    # Import the code wdwarfdate
+import numpy as np
 
-    #Define data for the white dwarfs
-    teffs = np.array([19250,20250])
-    teffs_err = np.array([500,850])
-    loggs = np.array([8.16,8.526])
-    loggs_err = np.array([0.084,0.126])
-
+#Define data for the white dwarfs
+teffs = np.array([19250,20250])
+teffs_err = np.array([500,850])
+loggs = np.array([8.16,8.526])
+loggs_err = np.array([0.084,0.126])
 ```
 
 To run *wdwarfdate* we first set up the object WhiteDwarf with the parameters of the models we want to use. The code will sample the posterior distribution defined by the chosen models using [*emcee*](https://emcee.readthedocs.io/en/stable/) until convergence. 
@@ -74,17 +73,15 @@ This table will have one row for each teff and logg given and an estimation of t
 
 When we run *wdwarfdate* it will also save five files per star in a folder called results (which the code will create if it doesn't exist):
 
-1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corner_plot.png which contains the corner plot for the three variables the code samples: main sequence age, cooling age and delta m.
-
-2. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_walkers.png which contains the traces for each walker to confirm convergence of the code.
+1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_walkers.png which contains the traces for each walker to confirm convergence of the code.
+   
+2. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corner_plot.png which contains the corner plot for the three variables the code samples: main sequence age, cooling age and delta m.
 
 3. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age), and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age).
 
 4. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_corr_time.png which contains the result of the autocorrelation time as explained in the [tutorial](https://emcee.readthedocs.io/en/stable/tutorials/autocorr/) by Dan Foreman-Mackey.
 
-5. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST.txt which contains the likelihood evaluations in each step of the MCMC for all the parameters we are interested in. These are the columns: 'ln_ms_age', 'ln_cooling_age', 'ln_total_age, 'initial_mass' and 'final_mass'.
-
-To find the initial condition, *wdwarfdate* runs the *fast_test* method. This method generates a gaussian distribution for each pair of *teff* and *logg* using the uncertainties as standard deviation, and pass the full distribution through a chain of models to calculate the total age of the white dwarfs, and the rest of the parameters described above. This provides a good first approximation to the parameters. This method is also available to run separaterly.
+To find the initial condition, *wdwarfdate* runs the *fast_test* method. This method generates a gaussian distribution for each pair of *teff* and *logg* using the uncertainties as standard deviation, and passes the full distribution through a chain of models to calculate the total age of the white dwarfs, and the rest of the parameters described above. This provides a good first approximation to the parameters. This method is also available to run separaterly.
 
 ```python
 WD = wdwarfdate.WhiteDwarf(teffs,teffs_err,loggs,loggs_err,
@@ -99,7 +96,7 @@ WD.calc_wd_age()
 
 The output of this method is one plot:
 
-1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_fast_test_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the likelihood evaluations for the dependent parameters (final mass, initial mass and total age), but obtained with the *fast_test* method described above.
+1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_fast_test_distributions.png which contains the distribution of all the parameter of the white dwarf: the sampled parameters (main sequence and cooling age) and the dependent parameters (final mass, initial mass and total age), but obtained with the *fast_test* method described above.
 
 For more explanation and examples checkout the [documentation](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
 
