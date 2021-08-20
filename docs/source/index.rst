@@ -9,7 +9,7 @@ wdwarfdate
 Basic usage
 -----------
 
-Let's set up two white dwarfs with their effective temperature and surface gravity. These two white dwarfs parameters come from Cummings,J.D. et al. (2018). To run *wdwarfdate* we just need to initialize an object :func:`WhiteDwarf` with the parameters indicating the models we want to use. For details on these parameters go to the tutorials in this documentation.
+Let's set up two white dwarfs with their effective temperature and surface gravity. These two white dwarfs parameters come from Cummings,J.D. et al. (2018). To run *wdwarfdate* we just need to initialize the object :func:`WhiteDwarf` with the parameters indicating the models we want to use. For details on these parameters go to the tutorials in this documentation.
 
 .. code-block:: python
 
