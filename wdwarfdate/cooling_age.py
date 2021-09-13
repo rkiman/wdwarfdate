@@ -2,6 +2,7 @@ import numpy as np
 from scipy import interpolate
 import inspect
 import os
+from astropy.table import Table
 
 
 def get_cooling_model(model_wd):
@@ -31,22 +32,22 @@ def get_cooling_model(model_wd):
 
     # Load cooling tracks depending on the model of white dwarf chosen
     if (model_wd == 'DA'):
-        path = 'Models/cooling_models/Table_DA'
+        path = 'Models/cooling_models/Thick_seq_020_130.fits'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
-        table_model = np.loadtxt(filepath)
+        table_model = Table.read(filepath)
 
     if (model_wd == 'DB'):
-        path = 'Models/cooling_models/Table_DB'
+        path = 'Models/cooling_models/Thin_seq_020_130.fits'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
-        table_model = np.loadtxt(filepath)
+        table_model = Table.read(filepath)
 
-    model_teff = table_model[:, 0]
-    model_logg = table_model[:, 1]
+    model_teff = table_model['Teff']
+    model_logg = table_model['Log(g)']
     model_age = np.array(
-        [np.log10(x) if x > 0 else -1 for x in table_model[:, 43]])
-    model_mass = table_model[:, 2]
+        [np.log10(x) if x > 0 else -1 for x in table_model['Age']])
+    model_mass = table_model['M/Msun']
 
     # Removing -inf from model because interpolation doesn't work with them
     # model_age[np.isinf(model_age)] = -1
@@ -87,48 +88,37 @@ def calc_cooling_age(teff_dist, logg_dist, N, model):
     """
     # Load cooling track for the model selected.
     if model == 'DA':
-        path = 'Models/cooling_models/Table_DA'
+        path = 'Models/cooling_models/Thick_seq_020_130.fits'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
-        table_model = np.loadtxt(filepath)
-        rows = 61
+        table_model = Table.read(filepath)
 
     if model == 'DB':
-        path = 'Models/cooling_models/Table_DB'
+        path = 'Models/cooling_models/Thin_seq_020_130.fits'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
-        table_model = np.loadtxt(filepath)
-        rows = 72
+        table_model = Table.read(filepath)
 
-    model_teff = table_model[:, 0]
-    model_logg = table_model[:, 1]
-    model_age = table_model[:, 43]
-    model_mass = table_model[:, 2]
-
-    # Removing -inf from model because interpolation doesn't work with them
-    model_age[np.isinf(model_age)] = -1
-
-    grid_model_teff = model_teff.reshape(5, rows)
-    grid_model_logg = model_logg.reshape(5, rows)
-    grid_model_age = model_age.reshape(5, rows)
-    grid_model_mass = model_mass.reshape(5, rows)
+    model_teff = table_model['Teff']
+    model_logg = table_model['Log(g)']
+    model_age = table_model['Age']
+    model_mass = table_model['M/Msun']
 
     # Interpolate model for cooling age and final mass from the cooling tracks
-    f_cooling_age = interpolate.RectBivariateSpline(grid_model_logg[:, 0],
-                                                    grid_model_teff[0],
-                                                    grid_model_age)
-    f_final_mass = interpolate.RectBivariateSpline(grid_model_logg[:, 0],
-                                                   grid_model_teff[0],
-                                                   grid_model_mass)
-
+    f_cooling_age = interpolate.LinearNDInterpolator((model_logg, model_teff),
+                                                     model_age,
+                                                     fill_value=np.nan)
+    f_final_mass = interpolate.LinearNDInterpolator((model_logg, model_teff),
+                                                    model_mass,
+                                                    fill_value=np.nan)
     # Use the interpolated model to calculate final mass and cooling age from
     # effective temperature and logg
     cooling_age_dist, final_mass_dist = [], []
     for i in range(N):
-        c = [f_cooling_age(x, y)[0][0] for x, y in
+        c = [f_cooling_age(x, y) for x, y in
              zip(logg_dist[i], teff_dist[i])]
         cooling_age_dist_i = np.array(c)
-        fm = [f_final_mass(x, y)[0][0] for x, y in
+        fm = [f_final_mass(x, y) for x, y in
               zip(logg_dist[i], teff_dist[i])]
         mass_dist_i = np.array(fm)
 
