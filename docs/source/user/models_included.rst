@@ -5,34 +5,31 @@ Models included
 
 In order to estimate an age for a white dwarf a chain of models have to be used. Here are the models included in *wdwarfdate*.
 
-+------------+------------+-----------+
-| Header 1   | Header 2   | Header 3  |
-+============+============+===========+
-| body row 1 | column 2   | column 3  |
-+------------+------------+-----------+
-| body row 2 | Cells may span columns.|
-+------------+------------+-----------+
-| body row 3 | Cells may  | - Cells   |
-+------------+ span rows. | - contain |
-| body row 4 |            | - blocks. |
-+------------+------------+-----------+
++-----------------+------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| wdwarfdate                                                                                                                                                                                                                                  |
++=================+==================+========================================================================================================================================================================================================+
+| Models Included | Cooling Models   | Cooling tracks from the Montreal White Dwarf Group available `online <http://www.astro.umontreal.ca/~bergeron/CoolingModels/>`_ (These limits are approximated, see Figure below for the true limits): |
+|                 |                  |  - Thick H layer: :math:`2,500 \lesssim T_{\rm eff} \lesssim 150,000` K, :math:`7.0 \lesssim \log g \lesssim 9.0`                                                                                      |
+|                 |                  |  - Thin H layer: :math:`3,250 \lesssim T_{\rm eff} \lesssim 150,000` K, :math:`7.0 \lesssim \log g \lesssim 9.0`                                                                                       |
+|                 +------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                 | IFMR             | - `Marigo et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020NatAs...4.1102M/abstract>`_                                                                                                             |
+|                 |                  | - MIST and PARSEC based relations from `Cummings et al. (2018) <https://iopscience.iop.org/article/10.3847/1538-4357/aadfd6>`_                                                                         |
+|                 |                  | - `Salaris et al. (2009) <https://ui.adsabs.harvard.edu/abs/2009ApJ...692.1013S/abstract>`_                                                                                                            |
+|                 |                  | - `Williams et al. (2009) <https://iopscience.iop.org/article/10.1088/0004-637X/693/1/355>`_                                                                                                           |
+|                 +------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                 | Isochrones       | MESA Isochrones `available online <http://waps.cfa.harvard.edu/MIST/>`_:                                                                                                                               |
+|                 |                  |  - :math:`{\rm Fe/H} = -4.00, -1.00, 0.00, 0.50`                                                                                                                                                       |
+|                 |                  |  - :math:`{\rm v/vcrit} = 0.0, 0.4`                                                                                                                                                                    |
+|                 |                  |  - :math:`\alpha/{\rm Fe} = 0`                                                                                                                                                                         |
++-----------------+------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Constrains      | Assumptions      | - Single star evolution                                                                                                                                                                                |
+|                 |                  | - C/O core                                                                                                                                                                                             |
++-----------------+------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
-Cooling Tracks
---------------
 
-- DA and DB white dwarfs availables Ref.`1 <http://www.astro.umontreal.ca/~bergeron/CoolingModels/>`_, see Bergeron, Wesemael, & Beauchamp (1995) Ref.`2 <https://ui.adsabs.harvard.edu/abs/1995PASP..107.1047B/abstract>`_ and Holberg & Bergeron (2006) Ref.`3 <https://ui.adsabs.harvard.edu/abs/2006AJ....132.1221H/abstract>`_
+The Figure below shows the cooling tracks used by *wdwarfdate* which indicate the limits in effective temperature and surface gravity in more detail for the models of thich and thin H layers (Kiman et al. in prep).
 
-Initial to Final Mass Relation
-------------------------------
+.. image:: cooling_seq.png
+   :width: 600
 
-- MIST and PARSEC from Cummings, J. D., et al. (2018) Ref.`4 <https://iopscience.iop.org/article/10.3847/1538-4357/aadfd6>`_
-- Salaris et al. (2009) Ref.`5 <https://ui.adsabs.harvard.edu/abs/2009ApJ...692.1013S/abstract>`_
-- Williams et al. (2009) Ref.`6 <https://iopscience.iop.org/article/10.1088/0004-637X/693/1/355>`_
-
-Isochrones
-----------
-
--  MESA Isochrones available online Ref.`7 <http://waps.cfa.harvard.edu/MIST/>`_
-         - :data:`feh='m4.00','m1.00','p0.00','p0.50'`
-         - :data:`vvcrit='0.0','0.4'` 
