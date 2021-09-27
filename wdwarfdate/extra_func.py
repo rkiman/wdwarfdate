@@ -3,7 +3,10 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+import os
+import inspect
+from astropy.table import Table
+from scipy import interpolate
 
 def calc_percentiles(ms_age, cooling_age, total_age, initial_mass,
                      final_mass, high_perc, low_perc):
@@ -57,9 +60,21 @@ def plot_distributions(ms_age, cooling_age, total_age,
         ax.axvline(x=results[i] + results[i+2], color='k', linestyle='--')
         ax.set_xlabel(label)
         ax.yaxis.set_visible(False)
-        ax.set_title(title.format(np.round(results[i], 2),
-                                  np.round(results[i+1], 2),
-                                  np.round(results[i+2], 2)))
+        if any(np.array([np.round(results[i], 2),np.round(results[i+1], 2),
+                         np.round(results[i+2], 2)])==0):
+            dec_num = 2
+            while any(np.array([np.round(results[i], dec_num),
+                                np.round(results[i+1], dec_num),
+                                np.round(results[i+2], dec_num)])==0):
+                dec_num += 1
+            title2 = r"${{{0:."+str(dec_num)+"f}}}_{{-{1:."+str(dec_num)+"f}}}^{{+{2:."+str(dec_num)+"f}}}$"
+            ax.set_title(title2.format(np.round(results[i], dec_num),
+                                       np.round(results[i + 1], dec_num),
+                                       np.round(results[i + 2], dec_num)))
+        else:
+            ax.set_title(title.format(np.round(results[i], 2),
+                                      np.round(results[i+1], 2),
+                                      np.round(results[i+2], 2)))
 
     plt.tight_layout()
     if name == 'none':
@@ -72,30 +87,33 @@ def plot_distributions(ms_age, cooling_age, total_age,
     plt.close(f)
 
 
-def check_ranges(teff, logg, spt):
-    if spt == 'DA':
-        if np.logical_or(teff > 150000, teff < 2500):
-            print(
-                "Warning: Effective temperature is outside the range covered "
-                "by the cooling models from "
-                "http://www.astro.umontreal.ca/~bergeron/CoolingModels/ 2500 "
-                "K < Teff < 150000 K")
-        if np.logical_or(logg > 9, teff < 7):
-            print(
-                "Warning: Surface gravity is outside the range covered by the "
-                "cooling models from "
-                "http://www.astro.umontreal.ca/~bergeron/CoolingModels/ 7 < "
-                "logg < 9")
-    elif spt == 'DB':
-        if np.logical_or(teff > 150000, teff < 3250):
-            print(
-                "Warning: Effective temperature is outside the range covered "
-                "by the cooling models from "
-                "http://www.astro.umontreal.ca/~bergeron/CoolingModels/ 3250 "
-                "K < Teff < 150000 K")
-        if np.logical_or(logg > 9, teff < 7):
-            print(
-                "Warning: Surface gravity is outside the range covered by the "
-                "cooling models from "
-                "http://www.astro.umontreal.ca/~bergeron/CoolingModels/ 7 < "
-                "logg < 9")
+def check_ranges(teff, logg, model):
+
+    # Load cooling track for the model selected.
+    if model == 'DA':
+        path = 'Models/cooling_models/Thick_seq_020_130.fits'
+        path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
+        filepath = os.path.join(path1, path)
+        table_model = Table.read(filepath)
+
+    if model == 'DB':
+        path = 'Models/cooling_models/Thin_seq_020_130.fits'
+        path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
+        filepath = os.path.join(path1, path)
+        table_model = Table.read(filepath)
+
+    model_teff = table_model['Teff']
+    model_logg = table_model['Log(g)']
+    model_age = table_model['Age']
+    model_mass = table_model['M/Msun']
+
+    # Interpolate model for cooling age and final mass from the cooling tracks
+    f_cooling_age = interpolate.LinearNDInterpolator((model_logg, model_teff),
+                                                     model_age,
+                                                     fill_value=np.nan)
+    if ~(f_cooling_age(logg, teff) > 3e5):
+        print(
+            f"Warning: Effective temperature and surface temperature ({teff} and {logg}) "
+            "are outside the range covered "
+            "by the cooling tracks from "
+            "http://www.astro.umontreal.ca/~bergeron/CoolingModels/")

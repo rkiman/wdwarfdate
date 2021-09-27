@@ -31,13 +31,13 @@ def get_cooling_model(model_wd):
     """
 
     # Load cooling tracks depending on the model of white dwarf chosen
-    if (model_wd == 'DA'):
+    if model_wd == 'DA':
         path = 'Models/cooling_models/Thick_seq_020_130.fits'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
         table_model = Table.read(filepath)
 
-    if (model_wd == 'DB'):
+    if model_wd == 'DB':
         path = 'Models/cooling_models/Thin_seq_020_130.fits'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
@@ -113,6 +113,7 @@ def calc_cooling_age(teff_dist, logg_dist, N, model):
                                                     fill_value=np.nan)
     # Use the interpolated model to calculate final mass and cooling age from
     # effective temperature and logg
+
     cooling_age_dist, final_mass_dist = [], []
     for i in range(N):
         c = [f_cooling_age(x, y) for x, y in

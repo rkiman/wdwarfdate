@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import os
 import emcee
 import corner
+import warnings
 from .cooling_age import calc_cooling_age, get_cooling_model
 from .ifmr import calc_initial_mass, ifmr_bayesian
 from .ms_age import calc_ms_age, get_isochrone_model
@@ -119,6 +120,14 @@ class WhiteDwarf:
                    'initial_mass_median', 'initial_mass_err_low',
                    'initial_mass_err_high', 'final_mass_median',
                    'final_mass_err_low', 'final_mass_err_high'))
+        self.results_fast_test = Table(
+            names=('ms_age_median', 'ms_age_err_low', 'ms_age_err_high',
+                   'cooling_age_median', 'cooling_age_err_low',
+                   'cooling_age_err_high', 'total_age_median',
+                   'total_age_err_low', 'total_age_err_high',
+                   'initial_mass_median', 'initial_mass_err_low',
+                   'initial_mass_err_high', 'final_mass_median',
+                   'final_mass_err_low', 'final_mass_err_high'))
 
     def calc_wd_age(self):
         # If it doesn't exist, creates a folder to save the plots
@@ -137,14 +146,78 @@ class WhiteDwarf:
                 self.e_logg_i = w
                 self.init_params_i = q
 
-                # Set name of path and wd models to identif results
+                # Set name of path and wd models to identify results
                 self.wd_path_id = self.get_wd_path_id()
 
-                results_i = self.calc_bayesian_wd_age()
+                approx = self.calc_single_star_params()
+                cool_age, final_mass, initial_mass, ms_age = approx
+
+                if any(np.isnan(final_mass+cool_age)):
+                    warnings.warn("Effective temperature and/or surface "
+                          "gravity are outside of the allowed values of "
+                          "the model.")
+                    results_i = np.ones(15)*np.nan
+                elif(any(~np.isnan(final_mass))
+                     and any(np.isnan(initial_mass))):
+                    text = "Final mass "\
+                           "is outside the range allowed "\
+                           "by the IFMR. Cannot estimate initial mass, main "\
+                           "sequence age or total age. Run the fast_test "\
+                           "method to obtain a result for the rest of the "\
+                           "parameters."\
+                           "Final mass: %.2f Msun " % (final_mass[0][0])
+                    warnings.warn(text)
+                    results_i = np.ones(15) * np.nan
+                elif(any(~np.isnan(final_mass+cool_age+initial_mass))
+                     and any(np.isnan(ms_age))):
+                    text = "Initial mass "\
+                           "is outside of the range "\
+                           "allowed by the MIST isochrones. Cannot estimate "\
+                           "main sequence age or total age. Run the fast_test "\
+                           "method to obtain a result for the rest of the "\
+                           "parameters. "\
+                           "Initial mass: %.2f Msun " % (initial_mass[0][0])
+                    warnings.warn(text)
+                    results_i = np.ones(15) * np.nan
+                else:
+                    results_i = self.calc_bayesian_wd_age()
 
                 self.results.add_row(results_i)
 
         elif self.method == 'fast_test':
+            for x, y, z, w in zip(self.teff, self.e_teff, self.logg,
+                                  self.e_logg):
+                self.teff_i = x
+                self.e_teff_i = y
+                self.logg_i = z
+                self.e_logg_i = w
+                approx = self.calc_single_star_params()
+                cool_age, final_mass, initial_mass, ms_age = approx
+
+                if any(np.isnan(final_mass + cool_age)):
+                    print(f'Running teff:{x} logg:{z}')
+                    warnings.warn("Effective temperature and/or surface "
+                                  "gravity are outside of the allowed values of "
+                                  "the model.")
+                elif (any(~np.isnan(final_mass))
+                      and any(np.isnan(initial_mass))):
+                    print(f'Running teff:{x} logg:{z}')
+                    text = "Final mass " \
+                           "is outside the range allowed " \
+                           "by the IFMR. Cannot estimate initial mass, main " \
+                           "sequence age or total age. "\
+                           "Final mass: %.2f Msun " % (final_mass[0][0])
+                    warnings.warn(text)
+                elif (any(~np.isnan(final_mass + cool_age + initial_mass))
+                      and any(np.isnan(ms_age))):
+                    print(f'Running teff:{x} logg:{z}')
+                    text = "Initial mass " \
+                           "is outside of the range " \
+                           "allowed by the MIST isochrones. Cannot estimate " \
+                           "main sequence age or total age. "\
+                           "Initial mass: %.2f Msun " % (initial_mass[0][0])
+                    warnings.warn(text)
+
             self.calc_wd_age_fast_test()
 
     def calc_bayesian_wd_age(self):
@@ -236,29 +309,20 @@ class WhiteDwarf:
         init_params: (array) with initial conditions for the MCMC.
         """
 
-        if self.model_ifmr == 'Marigo_2020':
-            ifmr_dummy = 'Cummings_2018_MIST'
-        else:
-            ifmr_dummy = self.model_ifmr
-
-        teff_dist = np.array([[self.teff_i]])
-        logg_dist = np.array([[self.logg_i]])
-        cool_age_dist, final_mass_dist = calc_cooling_age(teff_dist, logg_dist,
-                                                          1, self.model_wd)
-
-        initial_mass_dist = calc_initial_mass(ifmr_dummy, final_mass_dist)
-        ms_age_dist = calc_ms_age(initial_mass_dist, self.feh, self.vvcrit)
+        cool_age_dist,_,_, ms_age_dist = self.calc_single_star_params()
 
         init_params = np.array([np.log10(ms_age_dist[0][0]),
                                 np.log10(cool_age_dist[0][0]), 0])
 
         if any(np.isnan(init_params)):
-            teff_dist = np.random.normal(self.teff_i, self.e_teff_i, 1000)
-            logg_dist = np.random.normal(self.logg_i, self.e_logg_i, 1000)
+            teff_dist = [np.random.normal(self.teff_i, self.e_teff_i, 1000)]
+            logg_dist = [np.random.normal(self.logg_i, self.e_logg_i, 1000)]
             cool_age_dist, final_mass_dist = calc_cooling_age(teff_dist,
                                                               logg_dist,
                                                               1, self.model_wd)
+
             initial_mass_dist = calc_initial_mass(ifmr_dummy, final_mass_dist)
+
             ms_age_dist = calc_ms_age(initial_mass_dist, self.feh, self.vvcrit)
 
             init_params = np.array([np.nanmedian(np.log10(ms_age_dist[0])),
@@ -266,6 +330,25 @@ class WhiteDwarf:
                                     0])
 
         return init_params
+
+    def calc_single_star_params(self):
+
+        if self.model_ifmr == 'Marigo_2020':
+            ifmr_dummy = 'Cummings_2018_MIST'
+        else:
+            ifmr_dummy = self.model_ifmr
+
+        teff_dist = np.array([[self.teff_i]])
+        logg_dist = np.array([[self.logg_i]])
+
+        cool_age_dist, final_mass_dist = calc_cooling_age(teff_dist, logg_dist,
+                                                          1, self.model_wd)
+
+        initial_mass_dist = calc_initial_mass(ifmr_dummy, final_mass_dist)
+
+        ms_age_dist = calc_ms_age(initial_mass_dist, self.feh, self.vvcrit)
+
+        return cool_age_dist, final_mass_dist, initial_mass_dist, ms_age_dist
 
     def run_emcee(self):
         """
@@ -312,7 +395,7 @@ class WhiteDwarf:
             converged = np.all(tau * self.n_indep_samples < (x + 1) * 100)
             converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
             if converged:
-                print('Converged')
+                print('Done')
                 self.index_conv_i = index
                 self.autocorr_i = autocorr
                 break
@@ -401,19 +484,8 @@ class WhiteDwarf:
         """
 
         # Set up the distribution of teff and logg
-        teff_dist, logg_dist = [], []
-        for i in range(self.n):
-            if np.isnan(self.teff[i] + self.e_teff[i] + self.logg[i]
-                        + self.e_logg[i]):
-                teff_dist.append(np.nan)
-                logg_dist.append(np.nan)
-            else:
-                check_ranges(self.teff[i], self.logg[i], self.model_wd)
-                teff_dist.append(np.random.normal(self.teff[i], self.e_teff[i],
-                                                  self.n_mc))
-                logg_dist.append(np.random.normal(self.logg[i], self.e_logg[i],
-                                                  self.n_mc))
-        teff_dist, logg_dist = np.array(teff_dist), np.array(logg_dist)
+        teff_dist, logg_dist = self.get_teff_logg_dist()
+
 
         # From teff and logg estimate cooling age and final mass
         res = calc_cooling_age(teff_dist, logg_dist, self.n,
@@ -427,23 +499,7 @@ class WhiteDwarf:
         # Estimate total age adding cooling age and main sequence age
         total_age_dist = cooling_age_dist + ms_age_dist
 
-        # Replace all the ages which are higher than the age of the universe
-        # with nans
-        mask_nan = np.isnan(total_age_dist)
-        total_age_dist[mask_nan] = -1
-
-        mask = total_age_dist / 1e9 > 13.8
-        total_age_dist[mask] = np.nan
-        total_age_dist[mask_nan] = np.nan
-
-        cooling_age_dist[mask] = np.copy(cooling_age_dist[mask]) * np.nan
-        final_mass_dist[mask] = np.copy(final_mass_dist[mask]) * np.nan
-        initial_mass_dist[mask] = np.copy(initial_mass_dist[mask]) * np.nan
-        ms_age_dist[mask] = np.copy(ms_age_dist[mask]) * np.nan
-        total_age_dist[mask] = np.copy(total_age_dist[mask]) * np.nan
-
         # Calculate percentiles and save results
-
         if self.datatype == 'Gyr':
             ms_age_dummy = ms_age_dist / 1e9
             cooling_age_dummy = cooling_age_dist / 1e9
@@ -457,7 +513,7 @@ class WhiteDwarf:
             cooling_age_dummy = cooling_age_dist
             total_age_dummy = total_age_dist
 
-        self.results = Table()
+        self.results_fast_test = Table()
         labels = ['ms_age', 'cooling_age', 'total_age', 'initial_mass',
                   'final_mass']
         self.distributions = [ms_age_dummy, cooling_age_dummy, total_age_dummy,
@@ -467,16 +523,33 @@ class WhiteDwarf:
             median, high_err, low_err = calc_dist_percentiles(dist,
                                                               self.high_perc,
                                                               self.low_perc)
-            self.results[label + '_median'] = median
-            self.results[label + '_err_low'] = low_err
-            self.results[label + '_err_high'] = high_err
+            self.results_fast_test[label + '_median'] = median
+            self.results_fast_test[label + '_err_low'] = low_err
+            self.results_fast_test[label + '_err_high'] = high_err
 
         if self.return_distributions:
             for label, dist in zip(labels, self.distributions):
-                self.results[label + '_dist'] = dist
+                self.results_fast_test[label + '_dist'] = dist
 
         if self.save_plots or self.display_plots:
             self.plot_distributions_fast_test()
+
+    def get_teff_logg_dist(self):
+
+        teff_dist, logg_dist = [], []
+        for i in range(self.n):
+            if np.isnan(self.teff[i] + self.e_teff[i] + self.logg[i]
+                        + self.e_logg[i]):
+                teff_dist.append(np.nan)
+                logg_dist.append(np.nan)
+            else:
+                check_ranges(self.teff[i], self.logg[i], self.model_wd)
+                teff_dist.append(np.random.normal(self.teff[i], self.e_teff[i],
+                                                  self.n_mc))
+                logg_dist.append(np.random.normal(self.logg[i], self.e_logg[i],
+                                                  self.n_mc))
+
+        return np.array(teff_dist), np.array(logg_dist)
 
     def plot_distributions_fast_test(self):
         # Plot resulting distributions
@@ -490,7 +563,7 @@ class WhiteDwarf:
             x5 = np.array(self.distributions[2][i])
             x6 = np.array(self.distributions[3][i])
             x7 = np.array(self.distributions[4][i])
-            x8 = self.results[i]
+            x8 = self.results_fast_test[i]
 
             # Set name of path and wd models to identif results
             self.teff_i = x1
