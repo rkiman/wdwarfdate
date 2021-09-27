@@ -1,1 +1,0 @@
-#ln_ms_age ln_cooling_age ln_total_age initial_mass final_mass
