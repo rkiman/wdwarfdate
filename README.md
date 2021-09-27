@@ -28,7 +28,7 @@ pip install numpy astropy matplotlib emcee corner scipy daft
 Example usage
 -------------
 
-Getting right to it, let's make and example on how to estimate the ages of a couple of white dwarfs using *wdwarfdate*. First let's define the effective temperatures and surface gravity for both white dwarfs. 
+Getting right to it, let's make and example on how to estimate the ages of a couple of white dwarfs using *wdwarfdate*. First let's define the effective temperatures and surface gravity for both white dwarfs ([Cummings et al. 2018](https://ui.adsabs.harvard.edu/abs/2018ApJ...866...21C/abstract)).
 
 ```python
 import wdwarfdate    # Import the code wdwarfdate
@@ -71,7 +71,7 @@ This table will have one row for each teff and logg given and an estimation of t
 - *initial_mass:* Initial mass, meaning the mass of the progenitor star.
 - *final_mass:* Final mass, meaning the mass of the white dwarf.
 
-When we run *wdwarfdate* it will also save five files per star in a folder called results (which the code will create if it doesn't exist):
+When we run *wdwarfdate* it will also save four files per star in a folder called results (which the code will create if it doesn't exist):
 
 1. teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_walkers.png which contains the traces for each walker to confirm convergence of the code.
    
