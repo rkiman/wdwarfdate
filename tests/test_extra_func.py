@@ -8,7 +8,7 @@ import numpy as np
 def test_calc_percentiles():
     
     dist = np.random.normal(20, 5, 1000)
-    log_dist = np.log10(dist)
+    log_dist = np.log10(dist[dist > 0])
     high_perc, low_perc = 84, 16
     results = calc_percentiles(log_dist, log_dist, log_dist, dist, 
                                dist, high_perc, low_perc)
