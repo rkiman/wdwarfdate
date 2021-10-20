@@ -3,7 +3,6 @@
 
 import numpy as np
 from .ifmr import ifmr_bayesian
-log_age_universe = 15
 
 
 def ln_posterior_prob(params, teff, e_teff, logg, e_logg, models):
@@ -38,6 +37,9 @@ def model_teff_logg(params, models):
     # Parameters
     ln_ms_age, ln_cooling_age, delta_m = params
 
+    if np.log10(10**ln_ms_age + 10**ln_cooling_age) > 11:
+        return 1., 1.
+
     # Get the initial mass from the main sequence age using isochrones
     # Return -inf if ms_age values that are not included in the model
     if (np.logical_or(ln_ms_age < np.nanmin(ms_age_model),
@@ -47,6 +49,7 @@ def model_teff_logg(params, models):
 
     # Get the final mass from the initial-final mass relation
     # Return -inf if initial_mass values are not included in the model
+    '''
     if model_ifmr == 'Cummings_2018_MIST':
         if initial_mass >= 7.20 + 0.1 or initial_mass < 0.83 - 0.1:
             return 1., 1.
@@ -59,12 +62,15 @@ def model_teff_logg(params, models):
     elif model_ifmr == 'Marigo2020':
         if initial_mass >= 0.85 - 0.1 or initial_mass < 7.20 + 0.1:
             return 1., 1.
-
+    '''
     min_initial_mass_mist = np.nanmin(model_initial_mass)
     max_initial_mass_mist = np.nanmax(model_initial_mass)
 
     final_mass = ifmr_bayesian(initial_mass, model_ifmr, min_initial_mass_mist,
                                max_initial_mass_mist)
+
+    if np.isnan(final_mass):
+        return 1., 1.
     final_mass = final_mass + delta_m
 
     # Return -inf if the final_mass or the cooling age are not in the

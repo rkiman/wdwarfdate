@@ -32,11 +32,18 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on MIST isochrones
         '''
+        # mask1 = ((max([min_initial_mass_mist, 0.83]) <= initial_mass)
+        #          * (initial_mass < 2.85))
+        # mask1 = ((max([min_initial_mass_mist, 0.45]) <= initial_mass)
+        #         * (initial_mass < 2.85))
+        mask0 = ((max([min_initial_mass_mist, 0.45]) <= initial_mass)
+                 * (initial_mass < 0.83))
         mask1 = ((max([min_initial_mass_mist, 0.83]) <= initial_mass)
                  * (initial_mass < 2.85))
         mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
         mask3 = ((3.60 <= initial_mass)
-                 * (initial_mass < (min([max_initial_mass_mist, 7.20]))))
+                 * (initial_mass < (min([max_initial_mass_mist, 8]))))  # 7.20]))))
+        final_mass[mask0] = 0.5554  # 0.83 * 0.08 + 0.489
         final_mass[mask1] = initial_mass[mask1] * 0.08 + 0.489
         final_mass[mask2] = initial_mass[mask2] * 0.187 + 0.184
         final_mass[mask3] = initial_mass[mask3] * 0.107 + 0.471
@@ -47,7 +54,9 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on PARSEC isochrones
         '''
-        mask1 = ((max([min_initial_mass_mist, 0.87]) <= initial_mass)
+        # mask1 = ((max([min_initial_mass_mist, 0.87]) <= initial_mass)
+        #         * (initial_mass < 2.8))
+        mask1 = ((max([min_initial_mass_mist, 0.45]) <= initial_mass)
                  * (initial_mass < 2.8))
         mask2 = (2.8 <= initial_mass) * (initial_mass < 3.65)
         mask3 = ((3.65 <= initial_mass)
@@ -84,7 +93,7 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         based on MIST isochrones for masses > 3.65.
         '''
         mask1 = (((max([min_initial_mass_mist, 0.83])) <= initial_mass)
-                * (initial_mass <= 1.51))
+                 * (initial_mass <= 1.51))
         mask2 = (1.51 < initial_mass) * (initial_mass <= 1.845)
         mask3 = (1.845 < initial_mass) * (initial_mass <= 2.21)
         mask4 = (2.21 < initial_mass) * (initial_mass <= 3.65)
@@ -131,15 +140,37 @@ def calc_initial_mass(model_ifmr, final_mass_dist):
             initial_mass_dist_i = np.ones(n_mc) * np.nan
             for j in range(n_mc):
                 fm_dist_j = final_mass_dist_i[j]
-                if (0.5554 < fm_dist_j) and (fm_dist_j <= 0.717):
+                # if (0.5554 < fm_dist_j) and (fm_dist_j <= 0.717):
+                #    initial_mass_dist_i[j] = (fm_dist_j - 0.489) / 0.08
+                if (0.525 < fm_dist_j) and (fm_dist_j <= 0.717):
                     initial_mass_dist_i[j] = (fm_dist_j - 0.489) / 0.08
+                #if (0.525 < fm_dist_j) and (fm_dist_j <= 0.5554):
+                #    initial_mass_dist_i[j] = 0.64 #(fm_dist_j - 0.489) / 0.08
+                #elif (0.5554 < fm_dist_j) and (fm_dist_j <= 0.717):
+                #    initial_mass_dist_i[j] = (fm_dist_j - 0.489) / 0.08
                 elif (0.71695 < fm_dist_j) and (fm_dist_j <= 0.8572):
                     initial_mass_dist_i[j] = (fm_dist_j - 0.184) / 0.187
-                elif (0.8562 < fm_dist_j) and (fm_dist_j <= 1.2414):
+                elif (0.8562 < fm_dist_j) and (fm_dist_j <= 1.327):  # 1.2414):
                     initial_mass_dist_i[j] = (fm_dist_j - 0.471) / 0.107
-                else:
-                    0
-
+            initial_mass_dist.append(initial_mass_dist_i)
+    elif model_ifmr == 'Cummings_2018_PARSEC':
+        '''
+        Uses initial-final mass relation from 
+        Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
+        to calculate progenitor's mass from the white dwarf mass.
+        '''
+        for final_mass_dist_i in final_mass_dist:
+            initial_mass_dist_i = np.ones(n_mc) * np.nan
+            for j in range(n_mc):
+                fm_dist_j = final_mass_dist_i[j]
+                # if (0.552 < fm_dist_j) and (fm_dist_j <= 0.72):
+                #    initial_mass_dist_i[j] = (fm_dist_j - 0.489) / 0.08
+                if (0.515 < fm_dist_j) and (fm_dist_j <= 0.72):
+                    initial_mass_dist_i[j] = (fm_dist_j - 0.476) / 0.0873
+                elif (0.72 < fm_dist_j) and (fm_dist_j <= 0.87):
+                    initial_mass_dist_i[j] = (fm_dist_j - 0.210) / 0.181
+                elif (0.87 < fm_dist_j) and (fm_dist_j <= 1.2497):
+                    initial_mass_dist_i[j] = (fm_dist_j - 0.565) / 0.0835
             initial_mass_dist.append(initial_mass_dist_i)
     elif model_ifmr == 'Salaris_2009':
         '''
@@ -156,8 +187,6 @@ def calc_initial_mass(model_ifmr, final_mass_dist):
                     initial_mass_dist_i[j] = (fm_dist_j - 0.331) / 0.134
                 elif 0.867 < fm_dist_j:
                     initial_mass_dist_i[j] = (fm_dist_j - 0.679) / 0.047
-                else:
-                    0
 
             initial_mass_dist.append(initial_mass_dist_i)
     elif model_ifmr == 'Williams_2009':

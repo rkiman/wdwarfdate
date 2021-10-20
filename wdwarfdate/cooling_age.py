@@ -32,16 +32,16 @@ def get_cooling_model(model_wd):
 
     # Load cooling tracks depending on the model of white dwarf chosen
     if model_wd == 'DA':
-        path = 'Models/cooling_models/Thick_seq_020_130.fits'
+        path = 'Models/cooling_models/Thick_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
-        table_model = Table.read(filepath)
+        table_model = Table.read(filepath, format='csv')
 
     if model_wd == 'DB':
-        path = 'Models/cooling_models/Thin_seq_020_130.fits'
+        path = 'Models/cooling_models/Thin_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
-        table_model = Table.read(filepath)
+        table_model = Table.read(filepath, format='csv')
 
     model_teff = table_model['Teff']
     model_logg = table_model['Log(g)']
@@ -63,7 +63,7 @@ def get_cooling_model(model_wd):
     return f_teff, f_logg, model_age, model_mass
 
 
-def calc_cooling_age(teff_dist, logg_dist, N, model):
+def calc_cooling_age(teff_dist, logg_dist, model):
     """
     Calculates cooling age and final mass of the white dwarf using cooling
     tracks from from Bergeron et al. (1995)
@@ -88,20 +88,21 @@ def calc_cooling_age(teff_dist, logg_dist, N, model):
     """
     # Load cooling track for the model selected.
     if model == 'DA':
-        path = 'Models/cooling_models/Thick_seq_020_130.fits'
+        path = 'Models/cooling_models/Thick_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
-        table_model = Table.read(filepath)
+        table_model = Table.read(filepath, format='csv')
 
     if model == 'DB':
-        path = 'Models/cooling_models/Thin_seq_020_130.fits'
+        path = 'Models/cooling_models/Thin_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
-        table_model = Table.read(filepath)
+        table_model = Table.read(filepath, format='csv')
 
     model_teff = table_model['Teff']
     model_logg = table_model['Log(g)']
-    model_age = table_model['Age']
+    model_age = np.array(
+        [np.log10(x) if x > 0 else np.nan for x in table_model['Age']])
     model_mass = table_model['M/Msun']
 
     # Interpolate model for cooling age and final mass from the cooling tracks
@@ -115,14 +116,14 @@ def calc_cooling_age(teff_dist, logg_dist, N, model):
     # effective temperature and logg
 
     cooling_age_dist, final_mass_dist = [], []
-    for i in range(N):
-        c = [f_cooling_age(x, y) for x, y in
-             zip(logg_dist[i], teff_dist[i])]
+    for logg_dist_i, teff_dist_i in zip(logg_dist, teff_dist):
+        # Calculate cooling age from teff and logg for star i
+        c = f_cooling_age(logg_dist_i, teff_dist_i)
         cooling_age_dist_i = np.array(c)
-        fm = [f_final_mass(x, y) for x, y in
-              zip(logg_dist[i], teff_dist[i])]
+        # Calculate final mass from teff and logg for star i
+        fm = f_final_mass(logg_dist_i, teff_dist_i)
         mass_dist_i = np.array(fm)
-
+        # Append results to final list
         cooling_age_dist.append(cooling_age_dist_i)
         final_mass_dist.append(mass_dist_i)
 

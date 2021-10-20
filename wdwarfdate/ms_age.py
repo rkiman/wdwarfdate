@@ -73,7 +73,7 @@ def calc_ms_age(initial_mass_dist, feh, vvcrit):
     table_model = Table.read(filepath)
 
     model_initial_mass = table_model['initial_mass']
-    model_ms_age = table_model['ms_age']
+    model_ms_age = np.log10(table_model['ms_age'])
 
     # Interpolate model using isochrone values
     f_ms_age = interpolate.interp1d(model_initial_mass,
@@ -99,14 +99,14 @@ def calc_ms_age(initial_mass_dist, feh, vvcrit):
 
     # Replace with nan all the values of ms_age bigger than the age of the
     # Universe
-    mask_nan = np.isnan(ms_age_dist)
-    ms_age_dist[mask_nan] = -1
+    #mask_nan = np.isnan(ms_age_dist)
+    #ms_age_dist[mask_nan] = -1
 
     # mask for the prior age less than the current age
     # of hte universe
     # mask = ms_age_dist/1e9 > 1e6#13.8
     # ms_age_dist[mask] = np.nan
 
-    ms_age_dist[mask_nan] = np.nan
+    #ms_age_dist[mask_nan] = np.nan
 
     return np.array(ms_age_dist)
