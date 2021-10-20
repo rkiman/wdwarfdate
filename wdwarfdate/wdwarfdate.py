@@ -145,7 +145,7 @@ class WhiteDwarf:
         if self.method == 'bayesian':
             if self.save_log:
                 file_log = open(self.path + 'run_log.txt', 'a')
-                file_log.write('#Teff\tlogg\ttime (min)\tconverged\n')
+                file_log.write('#Teff\tlogg\ttime (min)\tconverged\twarning\n')
             for x, y, z, w, q in zip(self.teff, self.e_teff, self.logg,
                                      self.e_logg, self.init_params):
                 print(f'Running Teff:{x} logg:{z}')
@@ -156,6 +156,7 @@ class WhiteDwarf:
                 self.e_logg_i = w
                 self.init_params_i = q
                 self.converged = False
+                self.warn_text = ''
 
                 # Set name of path and wd models to identify results
                 self.wd_path_id = self.get_wd_path_id()
@@ -167,7 +168,8 @@ class WhiteDwarf:
                 if self.save_log:
                     file_log.write(str(x) + '\t' + str(z) + '\t' +
                                    str((end - start) / 60) + '\t' +
-                                   str('Y' if self.converged else 'N') + '\n')
+                                   str('Y' if self.converged else 'N') + '\t' +
+                                   self.warn_text + '\n')
 
         elif self.method == 'fast_test':
             self.check_teff_logg()
@@ -179,41 +181,41 @@ class WhiteDwarf:
         cool_age, final_mass, initial_mass, ms_age = r
 
         if np.isnan(cool_age + final_mass) or cool_age < np.log10(3e5):
-            text = "Effective temperature and/or surface " \
+            self.warn_text = "Effective temperature and/or surface " \
                    "gravity are outside of the allowed values of " \
                    "the models. Teff: %0.2f, logg: %1.2f" % (self.teff_i, self.logg_i)
-            warnings.warn(text)
+            warnings.warn(self.warn_text)
             results_i = np.ones(15) * np.nan
         elif ~np.isnan(final_mass) and np.isnan(initial_mass):
-            text = "Final mass " \
+            self.warn_text = "Final mass " \
                    "is outside the range allowed " \
                    "by the IFMR. Cannot estimate initial mass, main " \
                    "sequence age or total age. Final mass and " \
                    "cooling age were calculated with the fast_test " \
                    "method. " \
                    "Teff: %0.2f, logg: %1.2f, Final mass ~ %2.2f Msun " % (self.teff_i, self.logg_i, final_mass)
-            warnings.warn(text)
+            warnings.warn(self.warn_text)
             # Calculate final mass and cooling age with fast_test method
             results_i = self.calc_final_mass_cooling_age()
         elif (~np.isnan(final_mass + cool_age + initial_mass)
               and np.isnan(ms_age)):
-            text = "Initial mass " \
+            self.warn_text = "Initial mass " \
                    "is outside of the range " \
                    "allowed by the MIST isochrones. Cannot estimate " \
                    "main sequence age or total age. Run the fast_test " \
                    "method to obtain a result for the rest of the " \
                    "parameters. " \
                    "Teff: %0.2f, logg: %1.2f, Initial mass ~ %2.2f Msun " % (self.teff_i, self.logg_i, initial_mass)
-            warnings.warn(text)
+            warnings.warn(self.warn_text)
             results_i = self.calc_final_mass_cooling_age()
         else:
             if final_mass < 0.56 or final_mass > 1.2414:
-                text = "The IFMR is going to be extrapolated to " \
+                self.warn_text = "The IFMR is going to be extrapolated to " \
                        "calculate initial mass, main sequence " \
                        "age and total age. Use these parameters with " \
                        "caution. " \
                        "Teff: %0.2f, logg: %1.2f, Final mass ~ %2.2f Msun " % (self.teff_i, self.logg_i, final_mass)
-                warnings.warn(text)
+                warnings.warn(self.warn_text)
             results_i = self.run_calc_bayesian_wd_age()
 
         return results_i

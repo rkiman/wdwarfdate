@@ -178,7 +178,7 @@ def calc_initial_mass(model_ifmr, final_mass_dist):
         Salaris, M., et al., Astrophys. J. 692, 1013–1032 (2009)
         to calculte progenitor's mass from the white dwarf mass.
         '''
-        print('Using Salaris 2009 IFMR')
+
         for final_mass_dist_i in final_mass_dist:
             initial_mass_dist_i = np.ones(n_mc) * np.nan
             for j in range(n_mc):
@@ -197,18 +197,13 @@ def calc_initial_mass(model_ifmr, final_mass_dist):
         
         Mfinal = 0.339 ± 0.015 + (0.129 ± 0.004)Minit ;
         '''
-        print('Using Williams 2009 IFMR')
-
-        initial_mass_dist = (final_mass_dist - 0.339) / 0.129
+        for final_mass_dist_i in final_mass_dist:
+            initial_mass_dist_i = np.ones(n_mc) * np.nan
+            for j in range(n_mc):
+                fm_dist_j = final_mass_dist_i[j]
+                initial_mass_dist_i[j] = (fm_dist_j - 0.339) / 0.129
+            initial_mass_dist.append(initial_mass_dist_i)
 
     initial_mass_dist = np.array(initial_mass_dist)
-
-    # Remove all the values that are lower than the limit
-    # of initial mass in isochrones
-    mask_nan = np.isnan(initial_mass_dist)
-    initial_mass_dist[mask_nan] = 5
-    mask_neg = initial_mass_dist < 0.1
-    initial_mass_dist[mask_neg] = np.nan
-    initial_mass_dist[mask_nan] = np.nan
 
     return initial_mass_dist
