@@ -6,22 +6,28 @@ import emcee
 import corner
 import warnings
 import time
-from .cooling_age import calc_cooling_age, get_cooling_model
+from .cooling_age import calc_cooling_age, get_cooling_model, \
+    get_cooling_model_grid
 from .ifmr import calc_initial_mass, ifmr_bayesian
-from .ms_age import calc_ms_age, get_isochrone_model
+from .ms_age import calc_ms_age, get_isochrone_model, get_isochrone_model_grid
 from .extra_func import calc_percentiles, plot_distributions
-from .extra_func import calc_dist_percentiles
+from .extra_func import calc_dist_percentiles, calc_single_star_params
 from .bayesian_age import ln_posterior_prob
 from .check_convergence import calc_auto_corr_time
-
+from .fast_test_age import estimate_parameters_fast_test, check_teff_logg
+from .bayesian_age_grid import get_other_params, get_dist_parameters, \
+    get_idx_sample, calc_posterior_grid
 
 class WhiteDwarf:
-    def __init__(self, teff0, e_teff0, logg0, e_logg0, method='bayesian',
+    def __init__(self, teff0, e_teff0, logg0, e_logg0, method='bayesian_grid',
                  model_wd='DA', feh='p0.00', vvcrit='0.0',
                  model_ifmr='Cummings_2018_MIST', init_params=[],
                  high_perc=84,
                  low_perc=16, datatype='yr', path='results/', nburn_in=2,
                  max_n=100000, n_indep_samples=100, n_mc=2000,
+                 n_mi=256, n_log10_tott=256, n_delta=128, min_mi='', max_mi='',
+                 min_log10_ttot='', max_log10_ttot='',
+                 tail=0.01, adjust_tail=True,
                  return_distributions=False, save_plots=False,
                  display_plots=True, save_log=False):
         """
@@ -100,7 +106,7 @@ class WhiteDwarf:
         self.save_log = save_log
         self.n_mc = n_mc
         # Bayesian method objects.
-        if self.method == 'bayesian':
+        if self.method == 'bayesian_emcee':
             if not init_params:
                 if self.n > 1:
                     self.init_params = [[] for i in range(self.n)]
@@ -123,9 +129,19 @@ class WhiteDwarf:
                        'initial_mass_median', 'initial_mass_err_low',
                        'initial_mass_err_high', 'final_mass_median',
                        'final_mass_err_low', 'final_mass_err_high'))
+        elif self.method == 'bayesian_grid':
+            self.n_mi = n_mi
+            self.n_log10_tott = n_log10_tott
+            self.n_delta = n_delta,
+            self.min_mi = min_mi
+            self.max_mi = max_mi
+            self.min_log10_ttot = min_log10_ttot
+            self.max_log10_ttot = max_log10_ttot
+            self.tail = tail
+            self.adjust_tail = adjust_tail
 
         # Fast-test method objects.
-        if self.method == 'fast_test':
+        elif self.method == 'fast_test':
             self.return_distributions = return_distributions
             self.results_fast_test = Table(
                 names=('ms_age_median', 'ms_age_err_low', 'ms_age_err_high',
@@ -142,7 +158,7 @@ class WhiteDwarf:
             if not os.path.exists(self.path):
                 os.makedirs(self.path)
 
-        if self.method == 'bayesian':
+        if self.method == 'bayesian_grid' or self.method == 'bayesian_emcee':
             if self.save_log:
                 if os.path.exists(self.path + 'run_log.txt'):
                     file_log = open(self.path + 'run_log.txt', 'a')
@@ -175,51 +191,48 @@ class WhiteDwarf:
                                    self.warn_text + '\n')
 
         elif self.method == 'fast_test':
-            self.check_teff_logg()
+            check_teff_logg(self.teff, self.e_teff, self.logg, self.e_logg)
             self.calc_wd_age_fast_test()
 
     def calc_wd_age_bayesian(self):
 
-        r = self.calc_single_star_params()
+        r = calc_single_star_params(self.teff, self.logg, self.model_wd,
+                                    self.model_ifmr, self.feh, self.vvcrit)
         cool_age, final_mass, initial_mass, ms_age = r
 
         if np.isnan(cool_age + final_mass) or cool_age < np.log10(3e5):
-            self.warn_text = "Effective temperature and/or surface " \
-                   "gravity are outside of the allowed values of " \
-                   "the models. Teff: %0.2f, logg: %1.2f" % (self.teff_i, self.logg_i)
-            warnings.warn(self.warn_text)
+            print("Warning: Effective temperature and/or surface " +
+                  "gravity are outside of the allowed values of " +
+                  "the models.")
             results_i = np.ones(15) * np.nan
         elif ~np.isnan(final_mass) and np.isnan(initial_mass):
-            self.warn_text = "Final mass " \
-                   "is outside the range allowed " \
-                   "by the IFMR. Cannot estimate initial mass, main " \
-                   "sequence age or total age. Final mass and " \
-                   "cooling age were calculated with the fast_test " \
-                   "method. " \
-                   "Teff: %0.2f, logg: %1.2f, Final mass ~ %2.2f Msun " % (self.teff_i, self.logg_i, final_mass)
-            warnings.warn(self.warn_text)
+            print("Warning: Final mass is outside the range allowed " +
+                  "by the IFMR. Cannot estimate initial mass, main " +
+                  "sequence age or total age. Final mass and " +
+                  "cooling age were calculated with the fast_test " +
+                  f"method. Final mass ~ {np.round(final_mass,2)} Msun ")
             # Calculate final mass and cooling age with fast_test method
             results_i = self.calc_final_mass_cooling_age()
         elif (~np.isnan(final_mass + cool_age + initial_mass)
               and np.isnan(ms_age)):
-            self.warn_text = "Initial mass " \
-                   "is outside of the range " \
-                   "allowed by the MIST isochrones. Cannot estimate " \
-                   "main sequence age or total age. Run the fast_test " \
-                   "method to obtain a result for the rest of the " \
-                   "parameters. " \
-                   "Teff: %0.2f, logg: %1.2f, Initial mass ~ %2.2f Msun " % (self.teff_i, self.logg_i, initial_mass)
-            warnings.warn(self.warn_text)
+            print("Warning: Initial mass is outside of the range " +
+                  "allowed by the MIST isochrones. Cannot estimate " +
+                  "main sequence age or total age. Run the fast_test " +
+                  "method to obtain a result for the rest of the " +
+                  "parameters. " +
+                  f"Initial mass ~ {np.round(initial_mass,2)} Msun ")
             results_i = self.calc_final_mass_cooling_age()
         else:
-            if final_mass < 0.56 or final_mass > 1.2414:
-                self.warn_text = "The IFMR is going to be extrapolated to " \
-                       "calculate initial mass, main sequence " \
-                       "age and total age. Use these parameters with " \
-                       "caution. " \
-                       "Teff: %0.2f, logg: %1.2f, Final mass ~ %2.2f Msun " % (self.teff_i, self.logg_i, final_mass)
-                warnings.warn(self.warn_text)
-            results_i = self.run_calc_bayesian_wd_age()
+            if final_mass < 0.56:
+                print("Warning: The IFMR is going to be extrapolated to " +
+                      "calculate initial mass, main sequence " +
+                      "age and total age. Use these parameters with " +
+                      f"caution. Final mass ~ {np.round(final_mass,2)} Msun ")
+
+            if self.method == 'bayesian_emcee':
+                results_i = self.calc_bayesian_wd_age_emcee()
+            else:
+                results_i = self.calc_bayesian_wd_age_grid()
 
         return results_i
 
@@ -230,28 +243,270 @@ class WhiteDwarf:
         models_name = mist_name + '_' + self.model_wd + '_' + self.model_ifmr
         return self.path + tg_name + models_name
 
-    def calc_single_star_params(self):
+    def calc_bayesian_wd_age_grid(self):
+        log10_ttot_min_wide_range = np.log10(0.5 * 1e6)
+        log10_ttot_max_wide_range = np.log10(15 * 1e9)
+        mi_min_wide_range = 0.1
+        mi_max_wide_range = 10
 
-        if self.model_ifmr == 'Marigo_2020':
-            ifmr_dummy = 'Cummings_2018_MIST'
+        self.cooling_models = get_cooling_model_grid(self.model_wd)
+        self.isochrone_model = get_isochrone_model_grid(feh=self.feh,
+                                                        vvcrit=self.vvcrit)
+
+        self.models0 = [self.model_ifmr, self.isochrone_model,
+                        self.cooling_models]
+
+        # If adjust_tail = True, it looks for the narrrow range where the
+        # posterior has higher probability. The code will adjust the limits
+        # which are not set by the user. If adjust_tail = False it will use a
+        # large range for the grid to evaluate the posterior, or the value
+        # set by the user.
+        if self.adjust_tail:
+            # If any of the limits was set by the user, it uses that limit.
+            # If not it performs a wide range evaluation of the posterior.
+            test_lim = []
+            set_values = [self.min_mi, self.max_mi,
+                          self.min_log10_ttot, self.max_log10_ttot]
+            default_values = [mi_min_wide_range, mi_max_wide_range,
+                              log10_ttot_min_wide_range,
+                              log10_ttot_max_wide_range]
+            for value, default in zip(set_values,default_values):
+                if value == '':
+                    test_lim.append(default)
+                else:
+                    test_lim.append(value)
+
+            assert all([x != '' for x in test_lim])
+            res = calc_posterior_grid(self.teff_i, self.e_teff_i, self.logg_i,
+                                      self.e_logg_i, self.models0,
+                                      n_mi=512, n_log10_tott=512,
+                                      n_delta=self.n_delta, min_mi=test_lim[0],
+                                      max_mi=test_lim[1],
+                                      min_log10_ttot=test_lim[2],
+                                      max_log10_ttot=test_lim[3])
+            params_test, params_grid_test, posterior_test = res
+
+            params_prob_test = [np.nansum(posterior_test, axis=(1, 2)),
+                                np.nansum(posterior_test, axis=(0, 2)),
+                                np.nansum(posterior_test, axis=(0, 1))]
+
+            sample_idx_test = get_idx_sample(posterior_test)
+            r = get_dist_parameters(params_grid_test[0], sample_idx_test)
+            mi_sample_test, mi_median_test, _, _ = r
+            r = get_dist_parameters(params_grid_test[1],sample_idx_test)
+            log10_tott_sample_test, log10_tott_median_test, _, _ = r
+            r = get_dist_parameters(params_grid_test[2], sample_idx_test)
+            delta_m_sample_test, _, _, _ = r
+            r = get_other_params(mi_sample_test, log10_tott_sample_test,
+                                 delta_m_sample_test, self.models0)
+            _, log10_ms_age_sample_test, _ = r
+
+            # If the object has a small initial mass, it means that the
+            # main sequence age is longer and the posterior is going to be
+            # thin. So it needs more points to sample.
+            if mi_median_test < 4:
+                if self.tail < 0.1:
+                    self.tail = 0.1
+                    print('Parameters were adjusted to be tail = 0.1, ' +
+                          'n_mi = 1024 and n_log10_tott = 1024. ' +
+                          'You can set adjust_tail to False and/or adjust ' +
+                          'the limits of the grid it manually.')
+                else:
+                    print('Parameters were adjusted to be n_mi = 1024 and ' +
+                          'n_log10_tott = 1024.' +
+                          ' You can set adjust_tail to False to avoid this ' +
+                          'change or adjust it manually.')
+                self.n_mi = 1024
+                self.n_log10_tott = 1024
+
+            # If the total age is mostly the main sequence age, then the
+            # posterior is going to be thin, so more points in the grid
+            # are needed.
+            if np.isclose(np.nanmedian(log10_ms_age_sample_test),
+                          log10_tott_median_test, rtol=0.01):
+                self.n_mi = 1024
+                self.n_log10_tott = 1024
+                print('Parameters were adjusted to be n_mi = 1024 and '+
+                      'n_log10_tott = 1024.' +
+                      ' You can set adjust_tail to False to avoid this change'+
+                      ' or adjust it manually.')
+
+            # Using the wide search for the posterior, we define the limits
+            # of the grid according to the chosen (or set) tail tolerance.
+            min_lim_prob_mi = self.tail * np.nanmax(params_prob_test[0])
+            min_lim_prob_ttot = self.tail * np.nanmax(params_prob_test[1])
+            prob_bigger_zero_mi = params_prob_test[0] > min_lim_prob_mi
+            prob_bigger_zero_ttot = params_prob_test[1] > min_lim_prob_ttot
+            # initial mass
+            mi_array_clean = params_test[0][prob_bigger_zero_mi]
+            if self.min_mi == '':
+                self.min_mi = np.min(mi_array_clean)
+            if self.max_mi == '':
+                self.max_mi = np.max(mi_array_clean)
+            # total age
+            tott_array_clean = params_test[1][prob_bigger_zero_ttot]
+            if self.min_log10_ttot == '':
+                self.min_ttot = np.min(tott_array_clean)
+            if self.max_log10_ttot == '':
+                self.max_log10_ttot = np.max(tott_array_clean)
+        # If adjust_tal is false, use the the wide range for the evaluation
+        # of the posterior, or the values set by the user, if any.
         else:
-            ifmr_dummy = self.model_ifmr
+            if self.min_mi == '':
+                self.min_mi = mi_min_wide_range
+            if self.max_mi == '':
+                self.max_mi = mi_max_wide_range
+            if self.min_log10_ttot == '':
+                self.min_log10_ttot = log10_ttot_min_wide_range
+            if self.max_log10_ttot == '':
+                self.max_log10_ttot = log10_ttot_max_wide_range
 
-        # Trick to make the following functions work.
-        teff_dist = [np.ones(2)*self.teff_i, np.ones(2)*self.teff_i]
-        logg_dist = [np.ones(2)*self.logg_i, np.ones(2)*self.logg_i]
+        print(f'Grid limits used to evaluate the posterior: ' +
+              f'mi = {np.round(min_mi, 2)}-{np.round(max_mi, 2)},' +
+              f'log10_ttot = {np.round(min_ttot, 2)}-{np.round(max_ttot, 2)}')
+        assert all([min_mi != '', max_mi != '', min_ttot != '', max_ttot != ''])
 
-        cool_age_dist, final_mass_dist = calc_cooling_age(teff_dist, logg_dist,
-                                                          self.model_wd)
+        # Calculate the posterior using a grid with the set limits
+        res = calc_posterior_grid(self.teff_i, self.e_teff_i, self.logg_i,
+                                  self.e_logg_i, self.models0,
+                                  n_mi=self.n_mi,
+                                  n_log10_tott=self.n_log10_tott,
+                                  n_delta=self.n_delta, min_mi=self.min_mi,
+                                  max_mi=self.max_mi,
+                                  min_log10_ttot=self.min_log10_ttot,
+                                  max_log10_ttot=self.max_log10_ttot)
 
-        initial_mass_dist = calc_initial_mass(ifmr_dummy, final_mass_dist)
+        params, params_grid, posterior = res
+        params_prob = [np.nansum(posterior, axis=(1, 2)),
+                       np.nansum(posterior, axis=(0, 2)),
+                       np.nansum(posterior, axis=(0, 1))]
 
-        ms_age_dist = calc_ms_age(initial_mass_dist, self.feh, self.vvcrit)
+        sample_idx = get_idx_sample(posterior)
+        r = get_dist_parameters(params_grid[0], sample_idx)
+        mi_sample, mi_median, mi_err_high, mi_err_low = r
+        r = get_dist_parameters(params_grid[1], sample_idx)
+        log10_tott_sample, log10_tott_median, log10_tott_err_high, log10_tott_err_low = r
+        r = get_dist_parameters(params_grid[2], sample_idx)
+        delta_m_sample, delta_m_median, delta_m_err_high, delta_m_err_low = r
+        r = get_other_params(mi_sample, log10_tott_sample, delta_m_sample,
+                             self.models0)
+        mf_sample, log10_ms_age_sample, log10_cool_age_sample = r
 
-        return [cool_age_dist[0][0], final_mass_dist[0][0],
-                initial_mass_dist[0][0], ms_age_dist[0][0]]
+        # If total age is mostly the main sequence age, then the posterior is
+        # going to be thin and hard to sample. So the code outputs a warning.
+        if np.isclose(np.nanmedian(log10_ms_age_sample),
+                      log10_tott_median, rtol=0.01):
+            print('Warning: Sampling of this posterior might be complicated. ' +
+                  'Use parameters with caution.')
 
-    def run_calc_bayesian_wd_age(self):
+        if self.datatype == 'yr':
+            ms_age_sample_dummy = log10_ms_age_sample
+            cool_age_sample_dummy = log10_cool_age_sample
+            tott_sample_dummy = log10_tott_sample
+            results_i = calc_percentiles(10**log10_ms_age_sample,
+                                         10**log10_cool_age_sample,
+                                         10**log10_tott_sample, mi_sample,
+                                         mf_sample,
+                                         self.high_perc, self.low_perc)
+        elif self.datatype == 'Gyr':
+            ms_age_sample_dummy = (10**log10_ms_age_sample)/1e9
+            cool_age_sample_dummy = (10**log10_cool_age_sample)/1e9
+            tott_sample_dummy = (10**log10_tott_sample)/1e9
+            results_i = calc_percentiles(ms_age_sample_dummy,
+                                         cool_age_sample_dummy,
+                                         tott_sample_dummy, mi_sample,
+                                         mf_sample,
+                                         self.high_perc, self.low_perc)
+        else:
+            ms_age_sample_dummy = log10_ms_age_sample
+            cool_age_sample_dummy = log10_cool_age_sample
+            tott_sample_dummy = log10_tott_sample
+            results_i = calc_percentiles(log10_ms_age_sample,
+                                         log10_cool_age_sample,
+                                         log10_tott_sample, mi_sample,
+                                         mf_sample,
+                                         self.high_perc, self.low_perc)
+
+        if self.save_plots or self.display_plots:
+            self.make_grid_plot(mi_median, log10_tott_median, delta_m_median,
+                                mi_err_low, log10_tott_err_low, delta_m_err_low,
+                                mi_err_high, log10_tott_err_high, delta_m_err_high,
+                                params, params_prob, posterior)
+
+            plot_distributions(ms_age_sample_dummy, cool_age_sample_dummy,
+                               tott_sample_dummy, mi_sample, mf_sample,
+                               datatype='log', results=results, display=True,
+                               save_plots=False)
+
+        return results_i
+
+    def make_grid_plot(self, mi_median, log10_tott_median, delta_m_median,
+                       mi_err_low, log10_tott_err_low, delta_m_err_low,
+                       mi_err_high, log10_tott_err_high, delta_m_err_high,
+                       params, params_prob, posterior):
+
+        params_label = [r'$m_{\rm ini}$', r'$\log _{10} t_{\rm tot}$',
+                        r'$\Delta m$']
+        res = [mi_median, log10_tott_median, delta_m_median]
+        res_err_low = [mi_err_low, log10_tott_err_low, delta_m_err_low]
+        res_err_high = [mi_err_high, log10_tott_err_high, delta_m_err_high]
+        title = r"${{{0:.2f}}}_{{-{1:.2f}}}^{{+{2:.2f}}}$"
+        f, axs = plt.subplots(3, 3, figsize=(10, 10), sharex='col')
+
+        for i in range(3):
+            for j in range(3):
+                if i == j:
+                    axs[i, j].plot(params[i], params_prob[i], '.-')
+                    axs[i, j].axvline(x=res[i], color='k')
+                    axs[i, j].axvline(x=res[i] - res_err_low[i], color='k', linestyle='--')
+                    axs[i, j].axvline(x=res[i] + res_err_high[i], color='k', linestyle='--')
+                    axs[i, j].set_yticklabels([])
+                    if any(np.array([np.round(res[i], 2), np.round(res_err_low[i], 2),
+                                     np.round(res_err_high[i], 2)]) == 0):
+                        dec_num = 2
+                        while any(np.array([np.round(res[i], dec_num),
+                                            np.round(res_err_low[i], dec_num),
+                                            np.round(res_err_high[i], dec_num)]) == 0):
+                            dec_num += 1
+                            title2 = r"${{{0:." + str(dec_num) + "f}}}_{{-{1:." + str(dec_num) + "f}}}^{{+{2:." + str(
+                                dec_num) + "f}}}$"
+                            axs[i, j].set_title(params_label[i] + ' = ' + title2.format(np.round(res[i], dec_num),
+                                                                                        np.round(res_err_low[i],
+                                                                                                 dec_num),
+                                                                                        np.round(res_err_high[i],
+                                                                                                 dec_num)))
+                    else:
+                        axs[i, j].set_title(params_label[i] + ' = ' + title.format(np.round(res[i], 2),
+                                                                                   np.round(res_err_low[i], 2),
+                                                                                   np.round(res_err_high[i], 2)))
+                elif i > j:
+                    options = np.array([0, 1, 2])
+                    mask = np.array([x not in [i, j] for x in options])
+                    axis_sum = options[mask][0]
+                    axs[i, j].contourf(params[j], params[i], np.nansum(posterior, axis=(axis_sum)).transpose(),
+                                       cmap='gist_yarg')
+                    if j == 1:
+                        axs[i, j].set_yticklabels([])
+                else:
+                    f.delaxes(axs[i, j])
+
+                if i == 2:
+                    axs[i, j].set_xlabel(params_label[j])
+
+                if j == 0 and i != 0:
+                    axs[i, j].set_ylabel(params_label[i])
+
+                axs[i, j].tick_params('both', direction='in', top=True, right=True)
+                axs[i, j].minorticks_on()
+                axs[i, j].tick_params('both', which='minor', direction='in', top=True, right=True)
+        plt.tight_layout()
+        if self.save_plots:
+            plt.savefig(self.path + '_gridplot.png', dpi=300)
+        if self.display:
+            plt.show()
+        plt.close(f)
+
+    def calc_bayesian_wd_age_emcee(self):
         """
         Calculates percentiles for main sequence age, cooling age, total age,
         final mass and initial mass of a white dwarf with teff0 and logg0.
@@ -288,28 +543,27 @@ class WhiteDwarf:
         init_params: (array) with initial conditions for the MCMC.
         """
 
-        cool_age_j, _, _, ms_age_j = self.calc_single_star_params()
+        r = calc_single_star_params(self.teff, self.logg, self.model_wd,
+                                    self.model_ifmr, self.feh, self.vvcrit)
+        cool_age_j, _, _, ms_age_j = r
 
         init_params = np.array([ms_age_j, cool_age_j, 0])
 
         if any(np.isnan(init_params)):
             teff_dist = [np.random.normal(self.teff_i, self.e_teff_i, self.n_mc)]
             logg_dist = [np.random.normal(self.logg_i, self.e_logg_i, self.n_mc)]
-            cool_age_dist, final_mass_dist = calc_cooling_age(teff_dist,
-                                                              logg_dist,
-                                                              self.model_wd)
+            cool_age, final_mass = calc_cooling_age(teff_dist, logg_dist,
+                                                    self.model_wd)
             if self.model_ifmr == 'Marigo_2020':
                 ifmr_dummy = 'Cummings_2018_MIST'
             else:
                 ifmr_dummy = self.model_ifmr
 
-            initial_mass_dist = calc_initial_mass(ifmr_dummy, final_mass_dist)
+            initial_mass = calc_initial_mass(ifmr_dummy, final_mass)
+            ms_age = calc_ms_age(initial_mass, self.feh, self.vvcrit)
 
-            ms_age_dist = calc_ms_age(initial_mass_dist, self.feh, self.vvcrit)
-
-            init_params = np.array([np.nanmedian(ms_age_dist[0]),
-                                    np.nanmedian(cool_age_dist[0]),
-                                    0])
+            init_params = np.array([np.nanmedian(ms_age),
+                                    np.nanmedian(cool_age), 0])
 
         return init_params
 
@@ -327,8 +581,6 @@ class WhiteDwarf:
         logg_dist = [np.random.normal(self.logg_i, self.e_logg_i, self.n_mc)]
         ln_cooling_age, final_mass = calc_cooling_age(teff_dist, logg_dist,
                                                       self.model_wd)
-        ln_cooling_age = ln_cooling_age[0]
-        final_mass = final_mass[0]
 
         # The rest of the parameters cannot be estimated, so the array is
         # filled with nans.
@@ -567,45 +819,6 @@ class WhiteDwarf:
             plt.show()
         plt.close(fig)
 
-    def check_teff_logg(self):
-
-        for x, y, z, w in zip(self.teff, self.e_teff, self.logg,
-                              self.e_logg):
-            self.teff_i = x
-            self.e_teff_i = y
-            self.logg_i = z
-            self.e_logg_i = w
-            approx = self.calc_single_star_params()
-            cool_age, final_mass, initial_mass, ms_age = approx
-
-            if np.isnan(final_mass + cool_age) or cool_age < 5.477:
-                text = "Effective temperature and/or surface " \
-                       "gravity are outside of the allowed values of " \
-                       "the model. Teff: %0.2f, logg: %1.2f" % (x, z)
-                warnings.warn(text)
-            elif ~np.isnan(final_mass) and np.isnan(initial_mass):
-                text = "Final mass " \
-                       "is outside the range allowed " \
-                       "by the IFMR. Cannot estimate initial mass, main " \
-                       "sequence age or total age. " \
-                       "Teff: %0.2f, logg: %1.2f, Final mass ~ %2.2f Msun " % (x, z, final_mass)
-                warnings.warn(text)
-            elif (~np.isnan(final_mass + cool_age + initial_mass)
-                  and np.isnan(ms_age)):
-                text = "Initial mass " \
-                       "is outside of the range " \
-                       "allowed by the MIST isochrones. Cannot estimate " \
-                       "main sequence age or total age. " \
-                       "Teff: %0.2f, logg: %1.2f, Initial mass ~ %2.2f Msun " % (x, z, initial_mass)
-                warnings.warn(text)
-            elif final_mass < 0.56 or final_mass > 1.2414:
-                text = "The IFMR is going to be extrapolated to " \
-                       "calculate initial mass, main sequence " \
-                       "age and total age. Use these parameters with " \
-                       "caution. " \
-                       "Teff: %0.2f, logg: %1.2f, Final mass ~ %2.2f Msun " % (x, z, final_mass)
-                warnings.warn(text)
-
     def calc_wd_age_fast_test(self):
         """
         Calculated white dwarfs ages with a fast_test approach. Starts from normal
@@ -613,32 +826,17 @@ class WhiteDwarf:
         distribution through the same process to get a distribution of ages.
         """
 
-        # Set up the distribution of teff and logg
-        teff_dist, logg_dist = [], []
-        for teff_i, e_teff_i, logg_i, e_logg_i in zip(self.teff, self.e_teff,
-                                                      self.logg, self.e_logg):
-            if np.isnan(teff_i + e_teff_i + logg_i + e_logg_i):
-                teff_dist.append(np.nan)
-                logg_dist.append(np.nan)
-            else:
-                teff_dist.append(np.random.normal(teff_i, e_teff_i, self.n_mc))
-                logg_dist.append(np.random.normal(logg_i, e_logg_i, self.n_mc))
-        teff_dist, logg_dist = np.array(teff_dist), np.array(logg_dist)
+        distributions = estimate_parameters_fast_test(self.teff, self.e_teff,
+                                                      self.logg, self.e_logg,
+                                                      self.model_ifmr,
+                                                      self.model_wd, self.feh,
+                                                      self.vvcrit)
 
-        # From teff and logg estimate cooling age and final mass
-        res = calc_cooling_age(teff_dist, logg_dist, model=self.model_wd)
-        log_cooling_age_dist, final_mass_dist = res
-
-        # From final mass estimate initial mass
-        initial_mass_dist = calc_initial_mass(self.model_ifmr, final_mass_dist)
-
-        # From initial mass estimate main sequence age
-        log_ms_age_dist = calc_ms_age(initial_mass_dist, feh=self.feh,
-                                      vvcrit=self.vvcrit)
-
-        # Estimate total age adding cooling age and main sequence age
-        log_total_age_dist = np.log10(10 ** log_cooling_age_dist
-                                      + 10 ** log_ms_age_dist)
+        log_cooling_age_dist = distributions[0]
+        final_mass_dist = distributions[1]
+        initial_mass_dist = distributions[2]
+        log_ms_age_dist = distributions[3]
+        log_total_age_dist = distributions[4]
 
         # Calculate percentiles and save results
         if self.datatype == 'Gyr':

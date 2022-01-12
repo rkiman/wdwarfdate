@@ -7,6 +7,9 @@ import os
 import inspect
 from astropy.table import Table
 from scipy import interpolate
+from .cooling_age import calc_cooling_age
+from .ms_age import calc_ms_age
+from .ifmr import calc_initial_mass
 
 
 def calc_percentiles(ms_age, cooling_age, total_age, initial_mass,
@@ -119,3 +122,21 @@ def check_ranges(teff, logg, model):
             "are outside the range covered "
             "by the cooling tracks from "
             "http://www.astro.umontreal.ca/~bergeron/CoolingModels/")
+
+
+def calc_single_star_params(teff, logg, model_wd, model_ifmr, feh, vvcrit):
+
+    if model_ifmr == 'Marigo_2020':
+        ifmr_dummy = 'Cummings_2018_MIST'
+    else:
+        ifmr_dummy = model_ifmr
+
+    cool_age, final_mass = calc_cooling_age(teff, logg, model_wd)
+
+    initial_mass = calc_initial_mass(ifmr_dummy, final_mass)
+
+    ms_age = calc_ms_age(initial_mass, feh, vvcrit)
+
+    return [cool_age, final_mass, initial_mass, ms_age]
+
+

@@ -7,3 +7,5 @@ from .bayesian_age import *
 from .extra_func import *
 from .make_pgm import *
 from .check_convergence import *
+from .fast_test_age import *
+from .bayesian_age_grid import *

@@ -42,7 +42,7 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
                  * (initial_mass < 2.85))
         mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
         mask3 = ((3.60 <= initial_mass)
-                 * (initial_mass < (min([max_initial_mass_mist, 8]))))  # 7.20]))))
+                 * (initial_mass < (min([max_initial_mass_mist, 8.2]))))  # 7.20]))))
         final_mass[mask0] = 0.5554  # 0.83 * 0.08 + 0.489
         final_mass[mask1] = initial_mass[mask1] * 0.08 + 0.489
         final_mass[mask2] = initial_mass[mask2] * 0.187 + 0.184
@@ -54,13 +54,13 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on PARSEC isochrones
         '''
-        # mask1 = ((max([min_initial_mass_mist, 0.87]) <= initial_mass)
-        #         * (initial_mass < 2.8))
-        mask1 = ((max([min_initial_mass_mist, 0.45]) <= initial_mass)
-                 * (initial_mass < 2.8))
+        mask0 = ((max([min_initial_mass_mist, 0.45]) <= initial_mass)
+                 * (initial_mass < 0.87))
+        mask1 = (0.87 <= initial_mass) * (initial_mass < 2.8)
         mask2 = (2.8 <= initial_mass) * (initial_mass < 3.65)
         mask3 = ((3.65 <= initial_mass)
-                 * (initial_mass < (min([max_initial_mass_mist, 8.20]))))
+                 * (initial_mass < (min([max_initial_mass_mist, 8.20]))))  # 7.20]))))
+        final_mass[mask0] = 0.551951  # 0.87*0.0873+0.476
         final_mass[mask1] = initial_mass[mask1] * 0.0873 + 0.476
         final_mass[mask2] = initial_mass[mask2] * 0.181 + 0.210
         final_mass[mask3] = initial_mass[mask3] * 0.0835 + 0.565
@@ -107,7 +107,7 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
     return final_mass
 
 
-def calc_initial_mass(model_ifmr, final_mass_dist):
+def calc_initial_mass(ifmr_model, final_mass):
     """
     Uses different initial-final mass relations to calculte progenitor's mass
     from the white dwarf mass (final mass). This function is used in the
@@ -127,83 +127,63 @@ def calc_initial_mass(model_ifmr, final_mass_dist):
     initial_mass_dist : list of arrays. List of initial mass distributions
                         for each white dwarf progenitor.
     """
-    initial_mass_dist = []
-    n_mc = len(final_mass_dist[0])
 
-    if model_ifmr == 'Cummings_2018_MIST':
+    if ifmr_model == 'Marigo_2020':
+        ifmr_model = 'Cummings_2018_MIST'
+        print('Using Cummings_2018_MIST, because Marigo 2020 cannot be'
+              + ' used in this direction.')
+    # Initialize variables
+    final_mass = np.asarray(final_mass)
+    initial_mass = np.copy(final_mass) * np.nan
+    initial_mass = np.asarray(initial_mass)
+
+    if ifmr_model == 'Cummings_2018_MIST':
         '''
-        Uses initial-final mass relation from 
+        Initial-Final mass relation from 
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
-        to calculate progenitor's mass from the white dwarf mass.
+        based on MIST isochrones
         '''
-        for final_mass_dist_i in final_mass_dist:
-            initial_mass_dist_i = np.ones(n_mc) * np.nan
-            for j in range(n_mc):
-                fm_dist_j = final_mass_dist_i[j]
-                # if (0.5554 < fm_dist_j) and (fm_dist_j <= 0.717):
-                #    initial_mass_dist_i[j] = (fm_dist_j - 0.489) / 0.08
-                if (0.525 < fm_dist_j) and (fm_dist_j <= 0.717):
-                    initial_mass_dist_i[j] = (fm_dist_j - 0.489) / 0.08
-                #if (0.525 < fm_dist_j) and (fm_dist_j <= 0.5554):
-                #    initial_mass_dist_i[j] = 0.64 #(fm_dist_j - 0.489) / 0.08
-                #elif (0.5554 < fm_dist_j) and (fm_dist_j <= 0.717):
-                #    initial_mass_dist_i[j] = (fm_dist_j - 0.489) / 0.08
-                elif (0.71695 < fm_dist_j) and (fm_dist_j <= 0.8572):
-                    initial_mass_dist_i[j] = (fm_dist_j - 0.184) / 0.187
-                elif (0.8562 < fm_dist_j) and (fm_dist_j <= 1.327):  # 1.2414):
-                    initial_mass_dist_i[j] = (fm_dist_j - 0.471) / 0.107
-            initial_mass_dist.append(initial_mass_dist_i)
-    elif model_ifmr == 'Cummings_2018_PARSEC':
+        mask0 = (0.525 <= final_mass) * (final_mass < 0.717)
+        mask1 = (0.71695 <= final_mass) * (final_mass < 0.8572)
+        mask2 = (0.8562 <= final_mass) * (final_mass < 1.327)
+
+        initial_mass[mask0] = (final_mass[mask0] - 0.489) / 0.08
+        initial_mass[mask1] = (final_mass[mask1] - 0.184) / 0.187
+        initial_mass[mask2] = (final_mass[mask2] - 0.471) / 0.107
+    elif ifmr_model == 'Cummings_2018_PARSEC':
         '''
-        Uses initial-final mass relation from 
+        Initial-Final mass relation from 
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
-        to calculate progenitor's mass from the white dwarf mass.
-        '''
-        for final_mass_dist_i in final_mass_dist:
-            initial_mass_dist_i = np.ones(n_mc) * np.nan
-            for j in range(n_mc):
-                fm_dist_j = final_mass_dist_i[j]
-                # if (0.552 < fm_dist_j) and (fm_dist_j <= 0.72):
-                #    initial_mass_dist_i[j] = (fm_dist_j - 0.489) / 0.08
-                if (0.515 < fm_dist_j) and (fm_dist_j <= 0.72):
-                    initial_mass_dist_i[j] = (fm_dist_j - 0.476) / 0.0873
-                elif (0.72 < fm_dist_j) and (fm_dist_j <= 0.87):
-                    initial_mass_dist_i[j] = (fm_dist_j - 0.210) / 0.181
-                elif (0.87 < fm_dist_j) and (fm_dist_j <= 1.2497):
-                    initial_mass_dist_i[j] = (fm_dist_j - 0.565) / 0.0835
-            initial_mass_dist.append(initial_mass_dist_i)
-    elif model_ifmr == 'Salaris_2009':
-        '''
-        Uses initial-final mass relation from 
-        Salaris, M., et al., Astrophys. J. 692, 1013–1032 (2009)
-        to calculte progenitor's mass from the white dwarf mass.
+        based on PARSEC isochrones
         '''
 
-        for final_mass_dist_i in final_mass_dist:
-            initial_mass_dist_i = np.ones(n_mc) * np.nan
-            for j in range(n_mc):
-                fm_dist_j = final_mass_dist_i[j]
-                if (0.5588 <= fm_dist_j) and (fm_dist_j <= 0.867):
-                    initial_mass_dist_i[j] = (fm_dist_j - 0.331) / 0.134
-                elif 0.867 < fm_dist_j:
-                    initial_mass_dist_i[j] = (fm_dist_j - 0.679) / 0.047
+        mask1 = (0.515 <= final_mass) * (final_mass < 0.72)
+        mask2 = (0.72 <= final_mass) * (final_mass < 0.87)
+        mask3 = (0.87 <= final_mass) * (final_mass < 1.2497)
 
-            initial_mass_dist.append(initial_mass_dist_i)
-    elif model_ifmr == 'Williams_2009':
+        initial_mass[mask1] = (final_mass[mask1] - 0.476) / 0.0873
+        initial_mass[mask2] = (final_mass[mask2] - 0.210) / 0.181
+        initial_mass[mask3] = (final_mass[mask3] - 0.565) / 0.0835
+    elif ifmr_model == 'Salaris_2009':
+        '''
+        Initial-Final mass relation from 
+        Salaris, M., et al., Astrophys. J. 692, 1013–1032 (2009).
+        '''
+        mask1 = (0.5588 <= final_mass) * (final_mass < 0.867)
+        mask2 = (0.867 <= final_mass)
+
+        initial_mass[mask1] = (final_mass[mask1] - 0.331) / 0.134
+        initial_mass[mask2] = (final_mass[mask2] - 0.679) / 0.047
+    elif ifmr_model == 'Williams_2009':
         '''
         Uses initial-final mass relation from 
         Williams, K. A., et al., Astrophys. J. 693, 355–369 (2009).
         to calculte progenitor's mass from the white dwarf mass.
-        
+
         Mfinal = 0.339 ± 0.015 + (0.129 ± 0.004)Minit ;
         '''
-        for final_mass_dist_i in final_mass_dist:
-            initial_mass_dist_i = np.ones(n_mc) * np.nan
-            for j in range(n_mc):
-                fm_dist_j = final_mass_dist_i[j]
-                initial_mass_dist_i[j] = (fm_dist_j - 0.339) / 0.129
-            initial_mass_dist.append(initial_mass_dist_i)
 
-    initial_mass_dist = np.array(initial_mass_dist)
+        initial_mass = (final_mass - 0.339) / 0.129
 
-    return initial_mass_dist
+    return initial_mass
+
