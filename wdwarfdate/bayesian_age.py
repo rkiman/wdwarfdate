@@ -11,7 +11,7 @@ def ln_posterior_prob(params, teff, e_teff, logg, e_logg, models):
 
 
 def lnlike(params, teff, e_teff, logg, e_logg, models):
-    sigma_m = 0.08
+    sigma_m = 0.01
     _, _, delta_m = params
     model_teff, model_logg = model_teff_logg(params, models)
 

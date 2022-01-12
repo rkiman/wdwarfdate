@@ -80,7 +80,7 @@ def plot_distributions(ms_age, cooling_age, total_age,
                                       np.round(results[i + 2], 2)))
 
     plt.tight_layout()
-    if name == 'none':
+    if name == 'none' and save_plots:
         print('Please provide a name for the file, but for now we will save ' +
               'it as none')
     if save_plots:

@@ -144,8 +144,11 @@ class WhiteDwarf:
 
         if self.method == 'bayesian':
             if self.save_log:
-                file_log = open(self.path + 'run_log.txt', 'a')
-                file_log.write('#Teff\tlogg\ttime (min)\tconverged\twarning\n')
+                if os.path.exists(self.path + 'run_log.txt'):
+                    file_log = open(self.path + 'run_log.txt', 'a')
+                else:
+                    file_log = open(self.path + 'run_log.txt', 'a')
+                    file_log.write('Teff\tlogg\ttime (min)\tconverged\twarning\n')
             for x, y, z, w, q in zip(self.teff, self.e_teff, self.logg,
                                      self.e_logg, self.init_params):
                 print(f'Running Teff:{x} logg:{z}')
