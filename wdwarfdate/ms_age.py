@@ -43,6 +43,7 @@ def get_isochrone_model(feh, vvcrit):
 
     return f_initial_mass, model_initial_mass, model_ms_age
 
+
 def get_isochrone_model_grid(feh, vvcrit):
     """
     Interpolates MIST isochrones to get a function that gives initial mass
@@ -79,7 +80,7 @@ def get_isochrone_model_grid(feh, vvcrit):
     f_ms_age = interpolate.interp1d(model_initial_mass, model_ms_age,
                                     fill_value=np.nan)
 
-    return f_ms_age, model_initial_mass, model_ms_age
+    return f_ms_age, 10**model_initial_mass, model_ms_age
 
 
 def calc_ms_age(initial_mass, feh, vvcrit):

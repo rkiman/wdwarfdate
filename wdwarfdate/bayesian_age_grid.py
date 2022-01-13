@@ -2,6 +2,7 @@ import numpy as np
 import random
 from .ifmr import ifmr_bayesian
 
+
 def get_idx_sample(posterior_grid):
     posterior_flat = posterior_grid.flatten()
     idx_list = np.arange(0, len(posterior_flat))

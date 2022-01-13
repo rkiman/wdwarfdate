@@ -3,10 +3,11 @@ from scipy import interpolate
 import inspect
 import os
 from astropy.table import Table
+from .extra_func import calc_single_star_params
 
 
 def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
-                                  model_wd, feh, vvcrit):
+                                  model_wd, feh, vvcrit, n_mc):
     # Set up the distribution of teff and logg
     teff_dist, logg_dist = [], []
     for teff_i, e_teff_i, logg_i, e_logg_i in zip(teff, e_teff,
@@ -15,8 +16,8 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
             teff_dist.append(np.nan)
             logg_dist.append(np.nan)
         else:
-            teff_dist.append(np.random.normal(teff_i, e_teff_i, self.n_mc))
-            logg_dist.append(np.random.normal(logg_i, e_logg_i, self.n_mc))
+            teff_dist.append(np.random.normal(teff_i, e_teff_i, n_mc))
+            logg_dist.append(np.random.normal(logg_i, e_logg_i, n_mc))
     teff_dist, logg_dist = np.array(teff_dist), np.array(logg_dist)
 
     # From teff and logg estimate cooling age and final mass
@@ -246,38 +247,38 @@ def calc_initial_mass_fast_test(model_ifmr, final_mass_dist):
     return initial_mass_dist
 
 
-def check_teff_logg(teff, e_teff, logg, e_logg):
+def check_teff_logg(teff, e_teff, logg, e_logg, model_wd, model_ifmr,
+                    feh, vvcrit):
 
     for teff_i, e_teff_i, logg_i, e_logg_i in zip(teff, e_teff, logg, e_logg):
-        approx = calc_single_star_params()
+        approx = calc_single_star_params(teff_i, logg_i, model_wd, model_ifmr,
+                                         feh, vvcrit)
         cool_age, final_mass, initial_mass, ms_age = approx
 
         if np.isnan(final_mass + cool_age) or cool_age < 5.477:
-            text = "Effective temperature and/or surface " \
-                   "gravity are outside of the allowed values of " \
-                   "the model. Teff: %0.2f, logg: %1.2f" % (x, z)
-            warnings.warn(text)
+            print("Warning: Effective temperature and/or surface " +
+                  "gravity are outside of the allowed values of " +
+                  f"the model. Teff = {np.round(teff_i)} K, " +
+                  f"logg = {np.round(logg_i)}")
         elif ~np.isnan(final_mass) and np.isnan(initial_mass):
-            text = "Final mass " \
-                   "is outside the range allowed " \
-                   "by the IFMR. Cannot estimate initial mass, main " \
-                   "sequence age or total age. " \
-                   "Teff: %0.2f, logg: %1.2f, Final mass ~ %2.2f Msun " % (x, z, final_mass)
-            warnings.warn(text)
+            print("Warning: Final mass is outside the range allowed " +
+                  "by the IFMR. Cannot estimate initial mass, main " +
+                  "sequence age or total age. " +
+                  f"Teff = {np.round(teff_i)} K, logg = {np.round(logg_i)}, " +
+                  f"Final mass ~ {final_mass} Msun ")
         elif (~np.isnan(final_mass + cool_age + initial_mass)
               and np.isnan(ms_age)):
-            text = "Initial mass " \
-                   "is outside of the range " \
-                   "allowed by the MIST isochrones. Cannot estimate " \
-                   "main sequence age or total age. " \
-                   "Teff: %0.2f, logg: %1.2f, Initial mass ~ %2.2f Msun " % (x, z, initial_mass)
-            warnings.warn(text)
+            print("Warning: Initial mass is outside of the range " +
+                  "allowed by the MIST isochrones. Cannot estimate " +
+                  "main sequence age or total age. " +
+                  f"Teff = {np.round(teff_i)} K, logg = {np.round(logg_i)}, " +
+                  f"Initial mass ~ {initial_mass} Msun ")
         elif final_mass < 0.56 or final_mass > 1.2414:
-            text = "The IFMR is going to be extrapolated to " \
-                   "calculate initial mass, main sequence " \
-                   "age and total age. Use these parameters with " \
-                   "caution. " \
-                   "Teff: %0.2f, logg: %1.2f, Final mass ~ %2.2f Msun " % (x, z, final_mass)
-            warnings.warn(text)
+            print("Warning: The IFMR is going to be extrapolated to " +
+                  "calculate initial mass, main sequence " +
+                  "age and total age. Use these parameters with " +
+                  "caution. " +
+                  f"Teff = {np.round(teff_i)} K, logg = {np.round(logg_i)}, " +
+                  f"Final mass ~ {final_mass} Msun ")
 
 

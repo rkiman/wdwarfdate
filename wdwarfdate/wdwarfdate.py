@@ -105,16 +105,16 @@ class WhiteDwarf:
         self.display_plots = display_plots
         self.save_log = save_log
         self.n_mc = n_mc
+        if not init_params:
+            if self.n > 1:
+                self.init_params = [[] for i in range(self.n)]
+            else:
+                self.init_params = [[]]
+        else:
+            self.init_params = init_params
+        self.init_params_i = []
         # Bayesian method objects.
         if self.method == 'bayesian_emcee':
-            if not init_params:
-                if self.n > 1:
-                    self.init_params = [[] for i in range(self.n)]
-                else:
-                    self.init_params = [[]]
-            else:
-                self.init_params = init_params
-            self.init_params_i = []
             self.nburn_in = nburn_in
             self.max_n = max_n
             self.n_indep_samples = n_indep_samples
@@ -132,13 +132,21 @@ class WhiteDwarf:
         elif self.method == 'bayesian_grid':
             self.n_mi = n_mi
             self.n_log10_tott = n_log10_tott
-            self.n_delta = n_delta,
+            self.n_delta = n_delta
             self.min_mi = min_mi
             self.max_mi = max_mi
             self.min_log10_ttot = min_log10_ttot
             self.max_log10_ttot = max_log10_ttot
             self.tail = tail
             self.adjust_tail = adjust_tail
+            self.results = Table(
+                names=('ms_age_median', 'ms_age_err_low', 'ms_age_err_high',
+                       'cooling_age_median', 'cooling_age_err_low',
+                       'cooling_age_err_high', 'total_age_median',
+                       'total_age_err_low', 'total_age_err_high',
+                       'initial_mass_median', 'initial_mass_err_low',
+                       'initial_mass_err_high', 'final_mass_median',
+                       'final_mass_err_low', 'final_mass_err_high'))
 
         # Fast-test method objects.
         elif self.method == 'fast_test':
@@ -167,7 +175,8 @@ class WhiteDwarf:
                     file_log.write('Teff\tlogg\ttime (min)\tconverged\twarning\n')
             for x, y, z, w, q in zip(self.teff, self.e_teff, self.logg,
                                      self.e_logg, self.init_params):
-                print(f'Running Teff:{x} logg:{z}')
+                print(f'Running Teff = {np.round(x,2)} K, ' +
+                      f'logg = {np.round(z,2)}')
                 start = time.time()
                 self.teff_i = x
                 self.e_teff_i = y
@@ -191,7 +200,9 @@ class WhiteDwarf:
                                    self.warn_text + '\n')
 
         elif self.method == 'fast_test':
-            check_teff_logg(self.teff, self.e_teff, self.logg, self.e_logg)
+            check_teff_logg(self.teff, self.e_teff, self.logg, self.e_logg,
+                            self.model_wd, self.model_ifmr, self.feh,
+                            self.vvcrit)
             self.calc_wd_age_fast_test()
 
     def calc_wd_age_bayesian(self):
@@ -256,6 +267,11 @@ class WhiteDwarf:
         self.models0 = [self.model_ifmr, self.isochrone_model,
                         self.cooling_models]
 
+        set_values = [self.min_mi, self.max_mi,
+                      self.min_log10_ttot, self.max_log10_ttot]
+        if all([x != '' for x in set_values]):
+            self.adjust_tail = False
+
         # If adjust_tail = True, it looks for the narrrow range where the
         # posterior has higher probability. The code will adjust the limits
         # which are not set by the user. If adjust_tail = False it will use a
@@ -265,8 +281,6 @@ class WhiteDwarf:
             # If any of the limits was set by the user, it uses that limit.
             # If not it performs a wide range evaluation of the posterior.
             test_lim = []
-            set_values = [self.min_mi, self.max_mi,
-                          self.min_log10_ttot, self.max_log10_ttot]
             default_values = [mi_min_wide_range, mi_max_wide_range,
                               log10_ttot_min_wide_range,
                               log10_ttot_max_wide_range]
@@ -277,6 +291,7 @@ class WhiteDwarf:
                     test_lim.append(value)
 
             assert all([x != '' for x in test_lim])
+
             res = calc_posterior_grid(self.teff_i, self.e_teff_i, self.logg_i,
                                       self.e_logg_i, self.models0,
                                       n_mi=512, n_log10_tott=512,
@@ -318,11 +333,10 @@ class WhiteDwarf:
                           'change or adjust it manually.')
                 self.n_mi = 1024
                 self.n_log10_tott = 1024
-
             # If the total age is mostly the main sequence age, then the
             # posterior is going to be thin, so more points in the grid
             # are needed.
-            if np.isclose(np.nanmedian(log10_ms_age_sample_test),
+            elif np.isclose(np.nanmedian(log10_ms_age_sample_test),
                           log10_tott_median_test, rtol=0.01):
                 self.n_mi = 1024
                 self.n_log10_tott = 1024
@@ -346,7 +360,7 @@ class WhiteDwarf:
             # total age
             tott_array_clean = params_test[1][prob_bigger_zero_ttot]
             if self.min_log10_ttot == '':
-                self.min_ttot = np.min(tott_array_clean)
+                self.min_log10_ttot = np.min(tott_array_clean)
             if self.max_log10_ttot == '':
                 self.max_log10_ttot = np.max(tott_array_clean)
         # If adjust_tal is false, use the the wide range for the evaluation
@@ -362,9 +376,11 @@ class WhiteDwarf:
                 self.max_log10_ttot = log10_ttot_max_wide_range
 
         print(f'Grid limits used to evaluate the posterior: ' +
-              f'mi = {np.round(min_mi, 2)}-{np.round(max_mi, 2)},' +
-              f'log10_ttot = {np.round(min_ttot, 2)}-{np.round(max_ttot, 2)}')
-        assert all([min_mi != '', max_mi != '', min_ttot != '', max_ttot != ''])
+              f'mi = {np.round(self.min_mi, 2)}-{np.round(self.max_mi, 2)} ' +
+              f'Msun, log10_ttot = {np.round(self.min_log10_ttot, 2)}-' +
+              f'{np.round(self.max_log10_ttot, 2)}')
+        assert all([self.min_mi != '', self.max_mi != '',
+                    self.min_log10_ttot != '', self.max_log10_ttot != ''])
 
         # Calculate the posterior using a grid with the set limits
         res = calc_posterior_grid(self.teff_i, self.e_teff_i, self.logg_i,
@@ -427,7 +443,7 @@ class WhiteDwarf:
                                          mf_sample,
                                          self.high_perc, self.low_perc)
 
-        if self.save_plots or self.display_plots:
+        if self.save_plots or self.min_log10_ttot:
             self.make_grid_plot(mi_median, log10_tott_median, delta_m_median,
                                 mi_err_low, log10_tott_err_low, delta_m_err_low,
                                 mi_err_high, log10_tott_err_high, delta_m_err_high,
@@ -435,8 +451,8 @@ class WhiteDwarf:
 
             plot_distributions(ms_age_sample_dummy, cool_age_sample_dummy,
                                tott_sample_dummy, mi_sample, mf_sample,
-                               datatype='log', results=results, display=True,
-                               save_plots=False)
+                               datatype='log', results=results_i,
+                               display_plots=True, save_plots=False)
 
         return results_i
 
@@ -502,7 +518,7 @@ class WhiteDwarf:
         plt.tight_layout()
         if self.save_plots:
             plt.savefig(self.path + '_gridplot.png', dpi=300)
-        if self.display:
+        if self.display_plots:
             plt.show()
         plt.close(f)
 
@@ -549,7 +565,7 @@ class WhiteDwarf:
 
         init_params = np.array([ms_age_j, cool_age_j, 0])
 
-        if any(np.isnan(init_params)):
+        if any([np.isnan(x) for x in init_params]):
             teff_dist = [np.random.normal(self.teff_i, self.e_teff_i, self.n_mc)]
             logg_dist = [np.random.normal(self.logg_i, self.e_logg_i, self.n_mc)]
             cool_age, final_mass = calc_cooling_age(teff_dist, logg_dist,
@@ -830,7 +846,7 @@ class WhiteDwarf:
                                                       self.logg, self.e_logg,
                                                       self.model_ifmr,
                                                       self.model_wd, self.feh,
-                                                      self.vvcrit)
+                                                      self.vvcrit, self.n_mc)
 
         log_cooling_age_dist = distributions[0]
         final_mass_dist = distributions[1]

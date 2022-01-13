@@ -42,7 +42,7 @@ def calc_dist_percentiles(dist, high_perc, low_perc):
 
 def plot_distributions(ms_age, cooling_age, total_age,
                        initial_mass, final_mass, datatype,
-                       results, display, save_plots, name='none'):
+                       results, display_plots, save_plots, name='none'):
     title = r"${{{0:.2f}}}_{{-{1:.2f}}}^{{+{2:.2f}}}$"
     f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(12, 3))
 
@@ -88,7 +88,7 @@ def plot_distributions(ms_age, cooling_age, total_age,
               'it as none')
     if save_plots:
         plt.savefig(name + '_distributions.png', dpi=300)
-    if display:
+    if display_plots:
         plt.show()
     plt.close(f)
 
