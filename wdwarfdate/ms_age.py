@@ -73,14 +73,14 @@ def get_isochrone_model_grid(feh, vvcrit):
 
     table_model = Table.read(filepath)
 
-    model_initial_mass = np.log10(table_model['initial_mass'])
+    model_initial_mass = table_model['initial_mass']
     model_ms_age = np.log10(table_model['ms_age'])
 
     # Interpolate model from isochrone
     f_ms_age = interpolate.interp1d(model_initial_mass, model_ms_age,
                                     fill_value=np.nan)
 
-    return f_ms_age, 10**model_initial_mass, model_ms_age
+    return f_ms_age, model_initial_mass, model_ms_age
 
 
 def calc_ms_age(initial_mass, feh, vvcrit):
@@ -118,13 +118,15 @@ def calc_ms_age(initial_mass, feh, vvcrit):
     f_ms_age = interpolate.interp1d(model_initial_mass,
                                     model_ms_age, kind='cubic')
 
-    if np.logical_or(np.min(model_initial_mass) > initial_mass,
-                     np.max(model_initial_mass) < initial_mass):
-        ms_age = np.nan
-    elif np.isnan(initial_mass):
-        ms_age = np.nan
-    else:
-        ms_age = f_ms_age(initial_mass)
+    initial_mass = np.asarray(initial_mass)
+    ms_age = np.copy(initial_mass) * np.nan
+    ms_age = np.asarray(ms_age)
+
+    mask1 = np.min(model_initial_mass) > initial_mass
+    mask2 = np.max(model_initial_mass) < initial_mass
+    mask3 = np.logical_or(~mask1, ~mask2)
+
+    ms_age[mask3] = f_ms_age(initial_mass[mask3])
 
     return ms_age
 

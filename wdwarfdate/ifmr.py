@@ -22,7 +22,8 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
                  initial to final mass model chosen.
     """
     # Initialize variables
-    initial_mass = np.asarray(initial_mass)
+    if not isinstance(initial_mass, np.ndarray):
+        initial_mass = np.asarray(initial_mass)
     final_mass = np.copy(initial_mass) * np.nan
     final_mass = np.asarray(final_mass)
 
@@ -38,7 +39,7 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         #         * (initial_mass < 2.85))
         mask0 = ((max([min_initial_mass_mist, 0.45]) <= initial_mass)
                  * (initial_mass < 0.83))
-        mask1 = ((max([min_initial_mass_mist, 0.83]) <= initial_mass)
+        mask1 = ((0.83 <= initial_mass)
                  * (initial_mass < 2.85))
         mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
         mask3 = ((3.60 <= initial_mass)
@@ -92,13 +93,16 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on MIST isochrones for masses > 3.65.
         '''
-        mask1 = (((max([min_initial_mass_mist, 0.83])) <= initial_mass)
-                 * (initial_mass <= 1.51))
+
+        mask0 = ((max([min_initial_mass_mist, 0.45]) <= initial_mass)
+                 * (initial_mass < 0.83))
+        mask1 = (0.83 <= initial_mass) * (initial_mass <= 1.51)
         mask2 = (1.51 < initial_mass) * (initial_mass <= 1.845)
         mask3 = (1.845 < initial_mass) * (initial_mass <= 2.21)
         mask4 = (2.21 < initial_mass) * (initial_mass <= 3.65)
         mask5 = ((3.65 < initial_mass)
                  * (initial_mass < (min([max_initial_mass_mist, 7.20]))))
+        final_mass[mask0] = 0.53249
         final_mass[mask1] = initial_mass[mask1] * 0.103 + 0.447
         final_mass[mask2] = initial_mass[mask2] * 0.399 + 0.001
         final_mass[mask3] = initial_mass[mask3] * (-0.342) + 1.367

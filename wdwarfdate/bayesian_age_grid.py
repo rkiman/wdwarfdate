@@ -31,7 +31,7 @@ def get_other_params(mi_sample, log10_tcool_sample, delta_m_sample, models):
     mf_sample = ifmr_bayesian(mi_sample, model_ifmr, min_initial_mass_mist,
                               max_initial_mass_mist)
     mf_true_sample = mf_sample + delta_m_sample
-    log10_tms_sample = f_ms_age(np.log10(mi_sample))
+    log10_tms_sample = f_ms_age(mi_sample)
     log10_ttot_sample = np.log10(10 ** log10_tcool_sample
                                  + 10 ** log10_tms_sample)
     return mf_true_sample, log10_tms_sample, log10_ttot_sample
@@ -39,7 +39,7 @@ def get_other_params(mi_sample, log10_tcool_sample, delta_m_sample, models):
 
 def calc_posterior_grid(teff_i, e_teff_i, logg_i, e_logg_i, models, n_mi,
                         n_log10_tcool, n_delta, min_mi, max_mi,
-                        min_log10_tcool, max_log10_tcool):
+                        min_log10_tcool, max_log10_tcool, max_log10_age):
     """
     Parameters
     ----------
@@ -60,32 +60,31 @@ def calc_posterior_grid(teff_i, e_teff_i, logg_i, e_logg_i, models, n_mi,
     f_teff, f_logg = cooling_models
 
     # Defining grid axis
-    mi = 10 ** np.linspace(np.log10(min_mi), np.log10(max_mi), n_mi)
+    mi = np.linspace(min_mi, max_mi, n_mi)
     log10_tcool = np.linspace(min_log10_tcool, max_log10_tcool,
                               n_log10_tcool)
-    log10_mi = np.log10(mi)
     delta_m = np.linspace(-0.1, 0.1, n_delta)
 
     # Defining grid using axis
-    grid = np.meshgrid(log10_mi, log10_tcool, delta_m, indexing='ij')
+    grid = np.meshgrid(mi, log10_tcool, delta_m, indexing='ij')
 
     # Defining grid version of axis
-    log10_mi_grid = grid[0]
+    mi_grid = grid[0]
     log10_tcool_grid = grid[1]
     delta_m_grid = grid[2]
 
     # Setting log priors
-    log_prior_mi = (-1.3) * log10_mi_grid * np.log(10)  # IMF prior on mi
+    log_prior_mi = (-2.3) * np.log(mi_grid)  # IMF prior on mi
     log_prior_tcool = log10_tcool_grid * np.log(10)  # Constant SFH prior in ttot
     log_prior_delta_m = -0.5 * (delta_m_grid / 0.03) ** 2  # Prior Delta m
 
     # Calculate teff and logg using the grid parameters
-    log10_tms_grid = f_ms_age(log10_mi_grid)
+    log10_tms_grid = f_ms_age(mi_grid)
     log10_ttot_grid = np.copy(log10_tcool_grid) * np.nan
     diff = np.log10(10 ** log10_tcool_grid + 10 ** log10_tms_grid)
-    mask = diff < 10
+    mask = diff < max_log10_age
     log10_ttot_grid[mask] = np.log10(diff[mask])
-    mf_grid = ifmr_bayesian(10 ** log10_mi_grid, model_ifmr,
+    mf_grid = ifmr_bayesian(mi_grid, model_ifmr,
                             min_initial_mass_mist, max_initial_mass_mist)
     log10_mf_true_grid = np.log10(mf_grid + delta_m_grid)
     mask_nan = np.isnan(log10_mf_true_grid + log10_ttot_grid)  # Make the interpolation of teff
@@ -110,7 +109,7 @@ def calc_posterior_grid(teff_i, e_teff_i, logg_i, e_logg_i, models, n_mi,
     posterior = exp_posterior / np.nansum(exp_posterior)
 
     # Compile results
-    params = [10 ** log10_mi, log10_tcool, delta_m]
-    params_grid = [10 ** log10_mi_grid, log10_tcool_grid, delta_m_grid]
+    params = [mi, log10_tcool, delta_m]
+    params_grid = [mi_grid, log10_tcool_grid, delta_m_grid]
 
     return params, params_grid, posterior

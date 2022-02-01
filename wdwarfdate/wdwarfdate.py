@@ -28,7 +28,7 @@ class WhiteDwarf:
                  max_n=100000, n_indep_samples=100, n_mc=2000,
                  n_mi=256, n_log10_tcool=256, n_delta=128, min_mi='', max_mi='',
                  min_log10_tcool='', max_log10_tcool='',
-                 tail=0.01, adjust_tail=True,
+                 tail=0.005, adjust_tail=True,
                  return_distributions=False, save_plots=False,
                  display_plots=True, save_log=False):
         """
@@ -106,6 +106,7 @@ class WhiteDwarf:
         self.display_plots = display_plots
         self.save_log = save_log
         self.n_mc = n_mc
+        self.max_age = np.log10(15 * 1e9)
         if not init_params:
             if self.n > 1:
                 self.init_params = [[] for i in range(self.n)]
@@ -131,6 +132,8 @@ class WhiteDwarf:
                        'initial_mass_err_high', 'final_mass_median',
                        'final_mass_err_low', 'final_mass_err_high'))
         elif self.method == 'bayesian_grid':
+            self.return_distributions = return_distributions
+            self.distributions = []
             self.set_values = [min_mi, max_mi,
                                min_log10_tcool, max_log10_tcool,
                                n_mi, n_log10_tcool, n_delta,
@@ -199,9 +202,6 @@ class WhiteDwarf:
                                    self.warn_text + '\n')
 
         elif self.method == 'fast_test':
-            check_teff_logg(self.teff, self.e_teff, self.logg, self.e_logg,
-                            self.model_wd, self.model_ifmr, self.feh,
-                            self.vvcrit)
             self.calc_wd_age_fast_test()
 
     def calc_wd_age_bayesian(self):
@@ -254,8 +254,8 @@ class WhiteDwarf:
         return self.path + tg_name + models_name
 
     def calc_bayesian_wd_age_grid(self):
-        log10_tcool_min_wide_range = np.log10(0.5 * 1e6)
-        log10_tcool_max_wide_range = np.log10(15 * 1e9)
+        log10_tcool_min_wide_range = np.log10(0.3 * 1e6)
+        log10_tcool_max_wide_range = self.max_age
         mi_min_wide_range = 0.1
         mi_max_wide_range = 10
 
@@ -276,7 +276,7 @@ class WhiteDwarf:
         self.models0 = [self.model_ifmr, self.isochrone_model,
                         self.cooling_models]
 
-        # If adjust_tail = True, it looks for the narrrow range where the
+        # If adjust_tail = True, it looks for the narrow range where the
         # posterior has higher probability. The code will adjust the limits
         # which are not set by the user. If adjust_tail = False it will use a
         # large range for the grid to evaluate the posterior, or the value
@@ -284,6 +284,9 @@ class WhiteDwarf:
         if self.adjust_tail:
             # If any of the limits was set by the user, it uses that limit.
             # If not it performs a wide range evaluation of the posterior.
+            # Limits for low and high temperatures were set according to the
+            # cooling models to avoid grid evaluation in regions far from
+            # the answer.
             test_lim = []
             if self.teff_i < 4000:
                 print('Warning: You might need to adjust min_mi, max_mi, '
@@ -291,6 +294,9 @@ class WhiteDwarf:
                       'a better evaluation of the posterior.')
                 default_values = [mi_min_wide_range, mi_max_wide_range,
                                   8, log10_tcool_max_wide_range]
+            elif self.teff_i > 1.5e4:
+                default_values = [mi_min_wide_range, mi_max_wide_range,
+                                  log10_tcool_min_wide_range, 9.6989700043360]
             else:
                 default_values = [mi_min_wide_range, mi_max_wide_range,
                                   log10_tcool_min_wide_range,
@@ -310,45 +316,13 @@ class WhiteDwarf:
                                       n_delta=self.n_delta, min_mi=test_lim[0],
                                       max_mi=test_lim[1],
                                       min_log10_tcool=test_lim[2],
-                                      max_log10_tcool=test_lim[3])
+                                      max_log10_tcool=test_lim[3],
+                                      max_log10_age = log10_tcool_max_wide_range)
             params_test, params_grid_test, posterior_test = res
 
             params_prob_test = [np.nansum(posterior_test, axis=(1, 2)),
                                 np.nansum(posterior_test, axis=(0, 2)),
                                 np.nansum(posterior_test, axis=(0, 1))]
-            '''
-            sample_idx_test = get_idx_sample(posterior_test)
-            r = get_dist_parameters(params_grid_test[0], sample_idx_test)
-            mi_sample_test, mi_median_test, _, _ = r
-            r = get_dist_parameters(params_grid_test[1], sample_idx_test)
-            log10_tcool_sample_test, log10_tcool_median_test, _, _ = r
-            r = get_dist_parameters(params_grid_test[2], sample_idx_test)
-            delta_m_sample_test, _, _, _ = r
-            r = get_other_params(mi_sample_test, log10_tcool_sample_test,
-                                 delta_m_sample_test, self.models0)
-            _, log10_ms_age_sample_test, log10_ttot_sample_test = r
-
-            # If the object has a small initial mass, it means that the
-            # main sequence age is longer and the posterior is going to be
-            # thin. So it needs more points to sample.
-            if(np.isclose(np.nanmedian(log10_ms_age_sample_test),
-                          log10_tott_median_test, rtol=0.01)
-                    or np.isclose(np.nanmedian(log10_cool_age_sample_test),
-                                  log10_tott_median_test, rtol=0.01)):
-                if self.tail < 0.1:
-                    self.tail = 0.1
-                    print('Parameters were adjusted to be tail = 0.1, ' +
-                          'n_mi = 512 and n_log10_tott = 1024. ' +
-                          'You can set adjust_tail to False and/or adjust ' +
-                          'the limits of the grid it manually.')
-                else:
-                    print('Parameters were adjusted to be n_mi = 512 and ' +
-                          'n_log10_tott = 1024.' +
-                          ' You can set adjust_tail to False to avoid this ' +
-                          'change or adjust it manually.')
-                self.n_mi = 1024
-                self.n_log10_tott = 1024
-            '''
 
             # Using the wide search for the posterior, we define the limits
             # of the grid according to the chosen (or set) tail tolerance.
@@ -368,7 +342,7 @@ class WhiteDwarf:
                 self.min_log10_tcool = np.min(tcool_array_clean)
             if self.max_log10_tcool == '':
                 self.max_log10_tcool = np.max(tcool_array_clean)
-        # If adjust_tal is false, use the the wide range for the evaluation
+        # If adjust_tail is false, use the the wide range for the evaluation
         # of the posterior, or the values set by the user, if any.
         else:
             if self.min_mi == '':
@@ -395,7 +369,8 @@ class WhiteDwarf:
                                   n_delta=self.n_delta, min_mi=self.min_mi,
                                   max_mi=self.max_mi,
                                   min_log10_tcool=self.min_log10_tcool,
-                                  max_log10_tcool=self.max_log10_tcool)
+                                  max_log10_tcool=self.max_log10_tcool,
+                                  max_log10_age = log10_tcool_max_wide_range)
 
         params, params_grid, posterior = res
         params_prob = [np.nansum(posterior, axis=(1, 2)),
@@ -412,13 +387,6 @@ class WhiteDwarf:
         r = get_other_params(mi_sample, log10_tcool_sample, delta_m_sample,
                              self.models0)
         mf_sample, log10_tms_sample, log10_ttot_sample = r
-
-        # If total age is mostly the main sequence age, then the posterior is
-        # going to be thin and hard to sample. So the code outputs a warning.
-        #if np.isclose(np.nanmedian(log10_ms_age_sample),
-        #              log10_tott_median, rtol=0.01):
-        #    print('Warning: Sampling of this posterior might be complicated. ' +
-        #          'Use parameters with caution.')
 
         results_plot = calc_percentiles(log10_tms_sample,
                                         log10_tcool_sample,
@@ -453,14 +421,21 @@ class WhiteDwarf:
 
         if self.save_plots or self.display_plots:
             self.make_grid_plot(mi_median, log10_tcool_median, delta_m_median,
-                                mi_err_low, log10_tcool_err_low, delta_m_err_low,
-                                mi_err_high, log10_tcool_err_high, delta_m_err_high,
+                                mi_err_low, log10_tcool_err_low,
+                                delta_m_err_low,
+                                mi_err_high, log10_tcool_err_high,
+                                delta_m_err_high,
                                 params, params_prob, posterior)
 
             plot_distributions(tms_sample_dummy, tcool_sample_dummy,
                                ttot_sample_dummy, mi_sample, mf_sample,
                                datatype=self.datatype, results=results_plot,
                                display_plots=True, save_plots=False)
+
+        if self.return_distributions:
+            self.distributions.append([tms_sample_dummy, tcool_sample_dummy,
+                                       ttot_sample_dummy, mi_sample, mf_sample,
+                                       delta_m_sample])
 
         return results_i
 
@@ -600,42 +575,49 @@ class WhiteDwarf:
         the calibrated regime of the IFMR.
 
         """
-        # Estimate final mass and cooling age distributions using a
-        # Monte Carlo propagation of uncertainties.
-        teff_dist = [np.random.normal(self.teff_i, self.e_teff_i, self.n_mc)]
-        logg_dist = [np.random.normal(self.logg_i, self.e_logg_i, self.n_mc)]
-        ln_cooling_age, final_mass = calc_cooling_age(teff_dist, logg_dist,
-                                                      self.model_wd)
 
-        # The rest of the parameters cannot be estimated, so the array is
-        # filled with nans.
-        res_ms_age = np.ones(self.n_mc) * np.nan
-        res_tot_age = np.ones(self.n_mc) * np.nan
-        initial_mass = np.ones(self.n_mc) * np.nan
+        distributions = estimate_parameters_fast_test(self.teff_i,
+                                                      self.e_teff_i,
+                                                      self.logg_i,
+                                                      self.e_logg_i,
+                                                      self.model_ifmr,
+                                                      self.model_wd, self.feh,
+                                                      self.vvcrit, self.n_mc,
+                                                      self.max_age)
+
+        log_cooling_age = distributions[0][0]
+        final_mass = distributions[1][0]
+        initial_mass = distributions[2][0]
+        res_ms_age = distributions[3][0]
+        res_tot_age = distributions[4][0]
 
         # Adjust units for the ages as required by the user.
         if self.datatype == 'yr':
-            res_cool_age = (10 ** ln_cooling_age)
+            res_cool_age = (10 ** log_cooling_age)
         elif self.datatype == 'Gyr':
-            res_cool_age = (10 ** ln_cooling_age) / 1e9
+            res_cool_age = (10 ** log_cooling_age) / 1e9
         else:
-            res_cool_age = ln_cooling_age
+            res_cool_age = log_cooling_age
 
         # Estimate medians and uncertainties for each parameter.
         results_i = calc_percentiles(res_ms_age, res_cool_age, res_tot_age,
                                      initial_mass, final_mass,
                                      self.high_perc, self.low_perc)
 
+        if self.return_distributions:
+            self.distributions.append([res_ms_age, res_cool_age, res_tot_age,
+                                       initial_mass, final_mass, 0])
+
         if self.display_plots or self.save_plots:
 
             # Plot distribution for all the white dwarf and progenitor
             # parameters
             if self.datatype == 'yr':
-                r_dummy = calc_percentiles(res_ms_age, ln_cooling_age,
+                r_dummy = calc_percentiles(res_ms_age, log_cooling_age,
                                            res_tot_age, initial_mass,
                                            final_mass, self.high_perc,
                                            self.low_perc)
-                plot_distributions(res_ms_age, ln_cooling_age, res_tot_age,
+                plot_distributions(res_ms_age, log_cooling_age, res_tot_age,
                                    initial_mass, final_mass, self.datatype,
                                    r_dummy, self.display_plots, self.save_plots,
                                    name=self.wd_path_id)
@@ -856,7 +838,8 @@ class WhiteDwarf:
                                                       self.logg, self.e_logg,
                                                       self.model_ifmr,
                                                       self.model_wd, self.feh,
-                                                      self.vvcrit, self.n_mc)
+                                                      self.vvcrit, self.n_mc,
+                                                      self.max_age)
 
         log_cooling_age_dist = distributions[0]
         final_mass_dist = distributions[1]

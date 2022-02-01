@@ -183,18 +183,29 @@ def calc_cooling_age(teff, logg, model):
     model_logg = table_model['Log(g)']
     model_age = np.array(
         [np.log10(x) if x > 0 else np.nan for x in table_model['Age']])
-    model_mass = table_model['M/Msun']
+    model_mass = np.array(
+        [np.log10(x) if x > 0 else np.nan for x in table_model['M/Msun']])
+
+    mass_array = np.array([x for x in set(model_mass)])
+    mass_array = np.sort(mass_array)
+    age_array = np.array([np.nanmax(model_age[model_mass == x]) for x in mass_array])
+
+    f_age_mass = interpolate.CubicSpline(mass_array, age_array)
+
+    model_age_modif = model_age / f_age_mass(model_mass)
 
     # Interpolate model for cooling age and final mass from the cooling tracks
     f_cooling_age = interpolate.LinearNDInterpolator((model_logg, model_teff),
-                                                     model_age,
-                                                     fill_value=np.nan)
+                                                     model_age_modif,
+                                                     fill_value=np.nan,
+                                                     rescale=True)
     f_final_mass = interpolate.LinearNDInterpolator((model_logg, model_teff),
                                                     model_mass,
-                                                    fill_value=np.nan)
+                                                    fill_value=np.nan,
+                                                    rescale=True)
     # Use the interpolated model to calculate final mass and cooling age from
     # effective temperature and logg
-    cooling_age = f_cooling_age(logg, teff)
     final_mass = f_final_mass(logg, teff)
+    cooling_age = f_cooling_age(logg, teff) * f_age_mass(final_mass)
 
-    return cooling_age, final_mass
+    return cooling_age, 10**final_mass
