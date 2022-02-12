@@ -10,7 +10,8 @@ from .ms_age import calc_ms_age
 
 
 def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
-                                  model_wd, feh, vvcrit, n_mc, max_age):
+                                  model_wd, feh, vvcrit, n_mc, max_age,
+                                  warning=1):
 
     # Set up the distribution of teff and logg
     log_cooling_age_dist = []
@@ -33,22 +34,24 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
             cool_age_i, final_mass_i, initial_mass_i, ms_age_i = approx
 
             if np.isnan(final_mass_i) or cool_age_i < np.log10(3e5):
-                print("Warning: Effective temperature and/or surface " +
-                      "gravity are outside of the allowed values of " +
-                      f"the model. Teff = {np.round(teff_i, 2)} K, " +
-                      f"logg = {np.round(logg_i, 2)}")
+                if warning == 1:
+                    print("Warning: Effective temperature and/or surface " +
+                          "gravity are outside of the allowed values of " +
+                          f"the model. Teff = {np.round(teff_i, 2)} K, " +
+                          f"logg = {np.round(logg_i, 2)}")
                 log_cooling_age_dist.append(np.array([np.nan]))
                 final_mass_dist.append(np.array([np.nan]))
                 initial_mass_dist.append(np.array([np.nan]))
                 log_ms_age_dist.append(np.array([np.nan]))
                 log_total_age_dist.append(np.array([np.nan]))
             elif np.isnan(initial_mass_i):
-                print("Warning: Final mass is outside the range allowed " +
-                      "by the IFMR. Cannot estimate initial mass, main " +
-                      "sequence age or total age. " +
-                      f"Teff = {np.round(teff_i, 2)} K, " +
-                      f"logg = {np.round(logg_i, 2)}, " +
-                      f"Final mass ~ {np.round(final_mass_i, 2)} Msun ")
+                if warning == 1:
+                    print("Warning: Final mass is outside the range allowed " +
+                          "by the IFMR. Cannot estimate initial mass, main " +
+                          "sequence age or total age. " +
+                          f"Teff = {np.round(teff_i, 2)} K, " +
+                          f"logg = {np.round(logg_i, 2)}, " +
+                          f"Final mass ~ {np.round(final_mass_i, 2)} Msun ")
                 teff_dist = np.random.normal(teff_i, e_teff_i, n_mc)
                 logg_dist = np.random.normal(logg_i, e_logg_i, n_mc)
                 res = calc_cooling_age(teff_dist, logg_dist, model=model_wd)
@@ -62,12 +65,13 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
                 log_ms_age_dist.append(np.array([np.nan]))
                 log_total_age_dist.append(np.array([np.nan]))
             elif np.isnan(ms_age_i):
-                print("Warning: Initial mass is outside of the range " +
-                      "allowed by the MIST isochrones. Cannot estimate " +
-                      "main sequence age or total age. " +
-                      f"Teff = {np.round(teff_i, 2)} K, " +
-                      f"logg = {np.round(logg_i, 2)}, " +
-                      f"Initial mass ~ {np.round(initial_mass_i, 2)} Msun ")
+                if warning == 1:
+                    print("Warning: Initial mass is outside of the range " +
+                          "allowed by the MIST isochrones. Cannot estimate " +
+                          "main sequence age or total age. " +
+                          f"Teff = {np.round(teff_i, 2)} K, " +
+                          f"logg = {np.round(logg_i, 2)}, " +
+                          f"Initial mass ~ {np.round(initial_mass_i, 2)} Msun")
                 teff_dist = np.random.normal(teff_i, e_teff_i, n_mc)
                 logg_dist = np.random.normal(logg_i, e_logg_i, n_mc)
                 res = calc_cooling_age(teff_dist, logg_dist, model=model_wd)

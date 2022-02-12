@@ -168,7 +168,7 @@ class WhiteDwarf:
             if not os.path.exists(self.path):
                 os.makedirs(self.path)
 
-        if self.method == 'bayesian_grid' or self.method == 'bayesian_emcee':
+        if self.method == 'bayesian_grid':
             if self.save_log:
                 if os.path.exists(self.path + 'run_log.txt'):
                     file_log = open(self.path + 'run_log.txt', 'a')
@@ -177,8 +177,8 @@ class WhiteDwarf:
                     file_log.write('Teff\tlogg\ttime (min)\tconverged\twarning\n')
             for x, y, z, w, q in zip(self.teff, self.e_teff, self.logg,
                                      self.e_logg, self.init_params):
-                print(f'Running Teff = {np.round(x, 2)} K, ' +
-                      f'logg = {np.round(z, 2)}')
+                print(f'Running Teff = {np.round(x, 2)}+/-{np.round(y, 2)} K, '
+                      + f'logg = {np.round(z, 2)}+/-{np.round(q, 2)}')
                 start = time.time()
                 self.teff_i = x
                 self.e_teff_i = y
@@ -195,11 +195,6 @@ class WhiteDwarf:
 
                 self.results.add_row(results_i)
                 end = time.time()
-                if self.save_log:
-                    file_log.write(str(x) + '\t' + str(z) + '\t' +
-                                   str((end - start) / 60) + '\t' +
-                                   str('Y' if self.converged else 'N') + '\t' +
-                                   self.warn_text + '\n')
 
         elif self.method == 'fast_test':
             self.calc_wd_age_fast_test()
@@ -239,10 +234,7 @@ class WhiteDwarf:
                       "age and total age. Use these parameters with " +
                       f"caution. Final mass ~ {np.round(final_mass, 2)} Msun ")
 
-            if self.method == 'bayesian_emcee':
-                results_i = self.calc_bayesian_wd_age_emcee()
-            else:
-                results_i = self.calc_bayesian_wd_age_grid()
+            results_i = self.calc_bayesian_wd_age_grid()
 
         return results_i
 
@@ -576,14 +568,15 @@ class WhiteDwarf:
 
         """
 
-        distributions = estimate_parameters_fast_test(self.teff_i,
-                                                      self.e_teff_i,
-                                                      self.logg_i,
-                                                      self.e_logg_i,
+        distributions = estimate_parameters_fast_test(np.array([self.teff_i]),
+                                                      np.array([self.e_teff_i]),
+                                                      np.array([self.logg_i]),
+                                                      np.array([self.e_logg_i]),
                                                       self.model_ifmr,
                                                       self.model_wd, self.feh,
                                                       self.vvcrit, self.n_mc,
-                                                      self.max_age)
+                                                      self.max_age,
+                                                      warning=0)
 
         log_cooling_age = distributions[0][0]
         final_mass = distributions[1][0]
@@ -605,7 +598,7 @@ class WhiteDwarf:
                                      self.high_perc, self.low_perc)
 
         if self.return_distributions:
-            self.distributions.append([res_ms_age, res_cool_age, res_tot_age,
+            self.distributions.append([res_ms_age, log_cooling_age, res_tot_age,
                                        initial_mass, final_mass, 0])
 
         if self.display_plots or self.save_plots:

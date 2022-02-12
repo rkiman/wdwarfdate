@@ -147,6 +147,7 @@ def calc_initial_mass(ifmr_model, final_mass):
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on MIST isochrones
         '''
+        # lower limit extended
         mask0 = (0.525 <= final_mass) * (final_mass < 0.717)
         mask1 = (0.71695 <= final_mass) * (final_mass < 0.8572)
         mask2 = (0.8562 <= final_mass) * (final_mass < 1.327)
@@ -160,7 +161,7 @@ def calc_initial_mass(ifmr_model, final_mass):
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on PARSEC isochrones
         '''
-
+        # lower limit extended
         mask1 = (0.515 <= final_mass) * (final_mass < 0.72)
         mask2 = (0.72 <= final_mass) * (final_mass < 0.87)
         mask3 = (0.87 <= final_mass) * (final_mass < 1.2497)
