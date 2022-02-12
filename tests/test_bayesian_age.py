@@ -53,15 +53,4 @@ def test_ln_posterior_prob():
     assert (post_true > post_off)
 
 
-def test_get_cooling_model():
-    # Data from http://www.montrealwhitedwarfdatabase.org/evolution.html
-    teff = 4670.609661
-    logg = 7.794246000000001
-    final_mass = 0.451
-    cooling_age = np.log10(4.440 * 1e9)
 
-    # Define model with the same data base
-    f_teff, f_logg, model_age, model_mass = get_cooling_model('DA')
-
-    assert (np.isclose(f_teff(final_mass, cooling_age), teff, atol=120))
-    assert (np.isclose(f_logg(final_mass, cooling_age), logg, atol=0.05))
