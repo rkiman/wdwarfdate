@@ -17,8 +17,8 @@ class WhiteDwarf:
                  model_wd='DA', feh='p0.00', vvcrit='0.0',
                  model_ifmr='Cummings_2018_MIST', high_perc=84, low_perc=16,
                  datatype='yr', path='results/', n_mc=2000,
-                 n_mi=256, n_log10_tcool=256, n_delta=128, min_mi='', max_mi='',
-                 min_log10_tcool='', max_log10_tcool='',
+                 n_mi=256, n_log10_tcool=256, n_delta=128, min_mi='',
+                 max_mi='', min_log10_tcool='', max_log10_tcool='',
                  tail=0.005, adjust_tail=True,
                  return_distributions=False, save_plots=False,
                  display_plots=True):
@@ -30,8 +30,8 @@ class WhiteDwarf:
         dwarf
         logg0 : scalar, array. Surface gravity of the white dwarf
         e_logg0 : scalar, arraya. Error in surface gravity of the white dwarf
-        method : string. 'bayesian' or 'fast_test'. Bayesian will run an mcmc
-                 and output the distributions. fast_test runs a normal
+        method : string. 'bayesian_grid' or 'fast_test'. Bayesian will the grid
+                 method and output the results. fast_test runs a normal
                  distribution centered at the value with a std of the error
                  through all the models chosen.
         model_wd : string. Spectral type of the white dwarf 'DA' or 'non-DA'.
@@ -51,11 +51,30 @@ class WhiteDwarf:
                file will be save. If it doesn't exist, the code will create it.
         n_mc : scalar. Length of the distribution for each parameter. Only
                useful in fast_test mode.
+        n_mi : scalar. Number of bins for the initial mass axis of the grid.
+        n_log10_tcool : scalar. Number of bins for the cooling age axis of
+                        the grid.
+        n_delta: scalar. Number of bins for the delta parameter axis of the
+                 grid.
+        min_mi : scalar. Minimum limit for the the initial mass axis of the
+                 grid.
+        max_mi : scalar. Maximum limit for the the initial mass axis of the
+                 grid.
+        min_log10_tcool : scalar. Minimum limit for the the cooling age axis
+                          of the grid.
+        max_log10_tcool : scalar. Maximum limit for the the cooling age axis
+                          of the grid.
+        tail : scalar. Percentage cut off for log probability.
+        adjust_tail : True or False. If True, the limits of the grid will be
+                      adjusted automatically.
         return_distributions : True or False. Adds columns to the outputs with
                                the distributions of each parameter. Only useful
                                in fast_test mode.
-        save_plots: True or Flase. If True, plots and saves the figures
+        save_plots : True or False. If True, plots and saves the figures
                    describing the result in the path given.
+        display_plots : True or False. If True, will display plots after
+                        making them. Good option if working in jupyter
+                        notebook.
         """
 
         self.teff = teff0
@@ -128,10 +147,10 @@ class WhiteDwarf:
             for x, y, z, w in zip(self.teff, self.e_teff, self.logg,
                                   self.e_logg):
                 print(f'Running Teff = {np.round(x, 2)}'
-                      + r'$\pm$'
+                      + r' +/- '
                       + f'{np.round(y, 2)} K, '
                       + f'logg = {np.round(z, 2)}'
-                      + r'$\pm$'
+                      + r' +/- '
                       + f'{np.round(w, 2)}')
                 start = time.time()
                 self.teff_i = x
@@ -155,6 +174,10 @@ class WhiteDwarf:
         r = calc_single_star_params(self.teff_i, self.logg_i, self.model_wd,
                                     self.model_ifmr, self.feh, self.vvcrit)
         cool_age, final_mass, initial_mass, ms_age = r
+
+        if final_mass > 1.1 or final_mass < 0.45:
+            print('Warning: Final mass is outside the range normally ' +
+                  'considered as single star evolution (0.45-1.1 Msun).')
 
         if np.isnan(cool_age + final_mass) or cool_age < np.log10(3e5):
             print("Warning: Effective temperature and/or surface " +
