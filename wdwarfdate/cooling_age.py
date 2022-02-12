@@ -35,13 +35,13 @@ def get_cooling_model(model_wd):
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
         table_model = Table.read(filepath, format='csv')
-    elif model_wd == 'DB':
+    elif model_wd == 'non-DA':
         path = 'Models/cooling_models/Thin_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
         table_model = Table.read(filepath, format='csv')
     else:
-        print('Please choose DA or DB for model_wd. For now using DA.')
+        print('Please choose DA or non-DA for model_wd. For now using DA.')
         path = 'Models/cooling_models/Thick_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
@@ -94,13 +94,13 @@ def get_cooling_model_grid(model_wd):
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
         table_model = Table.read(filepath, format='csv')
-    elif model_wd == 'DB':
+    elif model_wd == 'non-DA':
         path = 'Models/cooling_models/Thin_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
         table_model = Table.read(filepath, format='csv')
     else:
-        print('Please choose DA or DB for model_wd. For now using DA.')
+        print('Please choose DA or non-DA for model_wd. For now using DA.')
         path = 'Models/cooling_models/Thick_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
@@ -114,19 +114,24 @@ def get_cooling_model_grid(model_wd):
 
     mass_array = np.array([x for x in set(model_mass)])
     mass_array = np.sort(mass_array)
-    age_array = np.array([np.nanmax(model_age[model_mass == x]) for x in mass_array])
+    age_array = np.array([np.nanmax(model_age[model_mass == x])
+                          for x in mass_array])
 
     f_age_mass = interpolate.CubicSpline(mass_array, age_array)
 
     model_age_modif = model_age / f_age_mass(model_mass)
 
-    f_teff_prime = interpolate.LinearNDInterpolator((model_mass, model_age_modif),
+    f_teff_prime = interpolate.LinearNDInterpolator((model_mass,
+                                                     model_age_modif),
                                                     model_teff,
-                                                    fill_value=np.nan, rescale=True)
+                                                    fill_value=np.nan,
+                                                    rescale=True)
 
-    f_logg_prime = interpolate.LinearNDInterpolator((model_mass, model_age_modif),
+    f_logg_prime = interpolate.LinearNDInterpolator((model_mass,
+                                                     model_age_modif),
                                                     model_logg,
-                                                    fill_value=np.nan, rescale=True)
+                                                    fill_value=np.nan,
+                                                    rescale=True)
 
     def f_teff(mass, age):
         age_modif = age / f_age_mass(mass)
@@ -167,13 +172,13 @@ def calc_cooling_age(teff, logg, model):
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
         table_model = Table.read(filepath, format='csv')
-    elif model == 'DB':
+    elif model == 'non-DA':
         path = 'Models/cooling_models/Thin_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
         table_model = Table.read(filepath, format='csv')
     else:
-        print('Please choose DA or DB for model_wd. For now using DA.')
+        print('Please choose DA or non-DA for model_wd. For now using DA.')
         path = 'Models/cooling_models/Thick_seq_020_130.csv'
         path1 = os.path.dirname(inspect.getfile(inspect.currentframe()))
         filepath = os.path.join(path1, path)
@@ -188,7 +193,8 @@ def calc_cooling_age(teff, logg, model):
 
     mass_array = np.array([x for x in set(model_mass)])
     mass_array = np.sort(mass_array)
-    age_array = np.array([np.nanmax(model_age[model_mass == x]) for x in mass_array])
+    age_array = np.array([np.nanmax(model_age[model_mass == x])
+                          for x in mass_array])
 
     f_age_mass = interpolate.CubicSpline(mass_array, age_array)
 

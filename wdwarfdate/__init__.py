@@ -3,9 +3,6 @@ from .ifmr import *
 from .ms_age import *
 from .wdwarfdate import *
 from .make_models_fit import *
-from .bayesian_age import *
 from .extra_func import *
-from .make_pgm import *
-from .check_convergence import *
 from .fast_test_age import *
 from .bayesian_age_grid import *
