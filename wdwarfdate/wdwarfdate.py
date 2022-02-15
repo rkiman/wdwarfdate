@@ -410,7 +410,7 @@ class WhiteDwarf:
                        params, params_prob, posterior):
 
         params_label = [r'$m_{\rm ini}$', r'$\log _{10} t_{\rm cool}$',
-                        r'$\Delta m$']
+                        r'$\Delta _{\rm m}$']
         res = [mi_median, log10_tott_median, delta_m_median]
         res_err_low = [mi_err_low, log10_tott_err_low, delta_m_err_low]
         res_err_high = [mi_err_high, log10_tott_err_high, delta_m_err_high]
