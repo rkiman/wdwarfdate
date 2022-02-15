@@ -10,14 +10,10 @@ from wdwarfdate.ms_age import calc_ms_age
 
 
 def test_calc_ms_age():
-    n = 10
+    n = 1000
     sigma = 0.5
-    initial_mass_dist = np.array([np.random.normal(np.random.rand()*5+1,
-                                                   sigma, 1000)
-                                  for i in range(n)])
-    ms_age_dist = calc_ms_age(initial_mass_dist, feh='p0.00', vvcrit='0.0')
-    
-    ms_age_median = np.array([np.nanpercentile(ms_age, 50)
-                              for ms_age in ms_age_dist])
+    initial_mass = np.random.normal(np.random.rand()*5+1,sigma, n)
 
-    assert(all(ms_age_median/1e9 < 15))
+    ms_age = calc_ms_age(initial_mass, feh='p0.00', vvcrit='0.0')
+
+    assert(all(ms_age/1e9 < 15))
