@@ -2,7 +2,6 @@ import numpy as np
 from astropy.table import Table
 import matplotlib.pyplot as plt
 import os
-import time
 from .cooling_age import get_cooling_model_grid
 from .ms_age import get_isochrone_model_grid
 from .extra_func import calc_percentiles, plot_distributions
@@ -152,7 +151,6 @@ class WhiteDwarf:
                       + f'logg = {np.round(z, 2)}'
                       + r' +/- '
                       + f'{np.round(w, 2)}')
-                start = time.time()
                 self.teff_i = x
                 self.e_teff_i = y
                 self.logg_i = z
@@ -164,7 +162,6 @@ class WhiteDwarf:
                 results_i = self.calc_wd_age_bayesian()
 
                 self.results.add_row(results_i)
-                end = time.time()
 
         elif self.method == 'fast_test':
             self.calc_wd_age_fast_test()
@@ -396,7 +393,9 @@ class WhiteDwarf:
             plot_distributions(tms_sample_dummy, tcool_sample_dummy,
                                ttot_sample_dummy, mi_sample, mf_sample,
                                datatype=self.datatype, results=results_plot,
-                               display_plots=True, save_plots=False)
+                               display_plots=self.display_plots,
+                               save_plots=self.save_plots,
+                               path = self.wd_path_id)
 
         if self.return_distributions:
             self.distributions.append([tms_sample_dummy, tcool_sample_dummy,
@@ -467,7 +466,7 @@ class WhiteDwarf:
                 axs[i, j].tick_params('both', which='minor', direction='in', top=True, right=True)
         plt.tight_layout()
         if self.save_plots:
-            plt.savefig(self.path + '_gridplot.png', dpi=300)
+            plt.savefig(self.wd_path_id + '_gridplot.png', dpi=300)
         if self.display_plots:
             plt.show()
         plt.close(f)
@@ -526,12 +525,12 @@ class WhiteDwarf:
                 plot_distributions(res_ms_age, log_cooling_age, res_tot_age,
                                    initial_mass, final_mass, self.datatype,
                                    r_dummy, self.display_plots, self.save_plots,
-                                   name=self.wd_path_id)
+                                   path=self.wd_path_id)
             else:
                 plot_distributions(res_ms_age, res_cool_age, res_tot_age,
                                    initial_mass, final_mass, self.datatype,
                                    results_i, self.display_plots,
-                                   self.save_plots, name=self.wd_path_id)
+                                   self.save_plots, path=self.wd_path_id)
 
         if self.save_plots:
             # Save distributions of each parameter.
@@ -627,8 +626,8 @@ class WhiteDwarf:
                                              self.high_perc, self.low_perc)
                 plot_distributions(x3, x4, x5, x6, x7, self.datatype, res_dummy,
                                    self.display_plots, self.save_plots,
-                                   name=self.wd_path_id + '_fast_test')
+                                   path=self.wd_path_id + '_fast_test')
             else:
                 plot_distributions(x3, x4, x5, x6, x7, self.datatype, x8,
                                    self.display_plots, self.save_plots,
-                                   name=self.wd_path_id + '_fast_test')
+                                   path=self.wd_path_id + '_fast_test')
