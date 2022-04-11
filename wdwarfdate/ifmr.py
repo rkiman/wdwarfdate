@@ -164,7 +164,7 @@ def calc_initial_mass(ifmr_model, final_mass):
         # lower limit extended
         mask1 = (0.515 <= final_mass) * (final_mass < 0.72)
         mask2 = (0.72 <= final_mass) * (final_mass < 0.87)
-        mask3 = (0.87 <= final_mass) * (final_mass < 1.2497)
+        mask3 = (0.87 <= final_mass) * (final_mass < 1.3)
 
         initial_mass[mask1] = (final_mass[mask1] - 0.476) / 0.0873
         initial_mass[mask2] = (final_mass[mask2] - 0.210) / 0.181

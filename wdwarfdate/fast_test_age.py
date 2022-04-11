@@ -19,6 +19,8 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
     initial_mass_dist = []
     log_ms_age_dist = []
     log_total_age_dist = []
+
+
     for teff_i, e_teff_i, logg_i, e_logg_i,i in zip(teff, e_teff,
                                                     logg, e_logg,
                                                     range(len(teff))):
@@ -111,12 +113,18 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
                 log_ms_age_dist.append(ms_age_dist_i[mask_age])
                 initial_mass_dist.append(ini_mass_dist_i[mask_age])
                 log_total_age_dist.append(log_tot_age_dist_i[mask_age])
-
-    return [np.array(log_cooling_age_dist),
-            np.array(final_mass_dist), np.array(initial_mass_dist),
-            np.array(log_ms_age_dist),
-            np.array(log_total_age_dist)]
-
+    if len(log_cooling_age_dist)>1:
+        return [np.array(log_cooling_age_dist, dtype=object),
+                np.array(final_mass_dist, dtype=object),
+                np.array(initial_mass_dist, dtype=object),
+                np.array(log_ms_age_dist, dtype=object),
+                np.array(log_total_age_dist, dtype=object)]
+    else:
+        return [np.array(log_cooling_age_dist),
+                np.array(final_mass_dist),
+                np.array(initial_mass_dist),
+                np.array(log_ms_age_dist),
+                np.array(log_total_age_dist)]
 
 def calc_cooling_age_fast_test(teff_dist, logg_dist, within_limits, model):
     # Load cooling track for the model selected.

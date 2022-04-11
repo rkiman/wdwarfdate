@@ -12,7 +12,7 @@ from .bayesian_age_grid import get_other_params, get_dist_parameters, \
 
 
 class WhiteDwarf:
-    def __init__(self, teff0, e_teff0, logg0, e_logg0, method='bayesian_grid',
+    def __init__(self, teff0, e_teff0, logg0, e_logg0, method='bayesian',
                  model_wd='DA', feh='p0.00', vvcrit='0.0',
                  model_ifmr='Cummings_2018_MIST', high_perc=84, low_perc=16,
                  datatype='yr', path='results/', n_mc=2000,
@@ -28,8 +28,8 @@ class WhiteDwarf:
         e_teff0 : scalar, array. Error in the effective temperature of the white
         dwarf
         logg0 : scalar, array. Surface gravity of the white dwarf
-        e_logg0 : scalar, arraya. Error in surface gravity of the white dwarf
-        method : string. 'bayesian_grid' or 'fast_test'. Bayesian will the grid
+        e_logg0 : scalar, array. Error in surface gravity of the white dwarf
+        method : string. 'bayesian' or 'fast_test'. Bayesian will the grid
                  method and output the results. fast_test runs a normal
                  distribution centered at the value with a std of the error
                  through all the models chosen.
@@ -63,12 +63,17 @@ class WhiteDwarf:
                           of the grid.
         max_log10_tcool : scalar. Maximum limit for the the cooling age axis
                           of the grid.
-        tail : scalar. Percentage cut off for log probability.
+        tail : scalar. Percentage cut off for log probability: 0.95 would
+               cut the probability close to the highest probability value,
+               0 does not remove anything.
         adjust_tail : True or False. If True, the limits of the grid will be
                       adjusted automatically.
-        return_distributions : True or False. Adds columns to the outputs with
-                               the distributions of each parameter. Only useful
-                               in fast_test mode.
+        return_distributions : True or False. In the fast test method adds
+                               columns to the table with results with
+                               the distributions of each parameter. In the
+                               Bayesian method it creates a new attribute for
+                               the object WhiteDwarfs with the distributions
+                               for the total age only.
         save_plots : True or False. If True, plots and saves the figures
                    describing the result in the path given.
         display_plots : True or False. If True, will display plots after
@@ -104,9 +109,9 @@ class WhiteDwarf:
         self.display_plots = display_plots
         self.n_mc = n_mc
         self.max_age = np.log10(15 * 1e9)
+        self.return_distributions = return_distributions
         # Bayesian method objects.
-        if self.method == 'bayesian_grid':
-            self.return_distributions = return_distributions
+        if self.method == 'bayesian':
             self.distributions = []
             self.set_values = [min_mi, max_mi,
                                min_log10_tcool, max_log10_tcool,
@@ -126,7 +131,6 @@ class WhiteDwarf:
 
         # Fast-test method objects.
         elif self.method == 'fast_test':
-            self.return_distributions = return_distributions
             self.results_fast_test = Table(
                 names=('ms_age_median', 'ms_age_err_low', 'ms_age_err_high',
                        'cooling_age_median', 'cooling_age_err_low',
@@ -142,7 +146,7 @@ class WhiteDwarf:
             if not os.path.exists(self.path):
                 os.makedirs(self.path)
 
-        if self.method == 'bayesian_grid':
+        if self.method == 'bayesian':
             for x, y, z, w in zip(self.teff, self.e_teff, self.logg,
                                   self.e_logg):
                 print(f'Running Teff = {np.round(x, 2)}'
@@ -156,10 +160,15 @@ class WhiteDwarf:
                 self.logg_i = z
                 self.e_logg_i = w
 
-                # Set name of path and wd models to identify results
-                self.wd_path_id = self.get_wd_path_id()
+                if np.isnan(x + y + z + w):
+                    print('Warning: teff, logg or their uncertainties are ' +
+                          'nans.')
+                    results_i = np.ones(15) * np.nan
+                else:
+                    # Set name of path and wd models to identify results
+                    self.wd_path_id = self.get_wd_path_id()
 
-                results_i = self.calc_wd_age_bayesian()
+                    results_i = self.calc_wd_age_bayesian()
 
                 self.results.add_row(results_i)
 
@@ -175,6 +184,12 @@ class WhiteDwarf:
         if final_mass > 1.1 or final_mass < 0.45:
             print('Warning: Final mass is outside the range normally ' +
                   'considered as single star evolution (0.45-1.1 Msun).')
+
+        if initial_mass > 5 and self.model_ifmr == 'Cummings_2018_MIST':
+            print('Warning: Consider using the PARSEC-based IFMR for '
+                  'progenitor stars more massive than 5 MSun as recommended '
+                  'by Cummings et al. (2018) because the MIST models tend to '
+                  'underestimate the mass of the progenitor star.')
 
         if np.isnan(cool_age + final_mass) or cool_age < np.log10(3e5):
             print("Warning: Effective temperature and/or surface " +
@@ -199,7 +214,9 @@ class WhiteDwarf:
                   f"Initial mass ~ {np.round(initial_mass, 2)} Msun ")
             results_i = self.calc_final_mass_cooling_age()
         else:
-            if final_mass < 0.56:
+            if(final_mass < 0.56
+                    or (final_mass > 1.2497
+                        and self.model_ifmr == 'Cummings_2018_PARSEC')):
                 print("Warning: The IFMR is going to be extrapolated to " +
                       "calculate initial mass, main sequence " +
                       "age and total age. Use these parameters with " +
@@ -211,7 +228,8 @@ class WhiteDwarf:
 
     def get_wd_path_id(self):
         # Set the name to identify the results from each white dwarf
-        tg_name = 'teff_' + str(self.teff_i) + '_logg_' + str(self.logg_i)
+        tg_name = 'teff_' + str(self.teff_i) + '_logg_' \
+                  + str(np.round(self.logg_i,2))
         mist_name = '_feh_' + self.feh + '_vvcrit_' + self.vvcrit
         models_name = mist_name + '_' + self.model_wd + '_' + self.model_ifmr
         return self.path + tg_name + models_name
@@ -335,63 +353,78 @@ class WhiteDwarf:
                                   max_log10_tcool=self.max_log10_tcool,
                                   max_log10_age = log10_tcool_max_wide_range)
 
-        params, params_grid, posterior = res
-        params_prob = [np.nansum(posterior, axis=(1, 2)),
-                       np.nansum(posterior, axis=(0, 2)),
-                       np.nansum(posterior, axis=(0, 1))]
+        self.params, params_grid, self.posterior = res
+        self.params_prob = [np.nansum(self.posterior, axis=(1, 2)),
+                            np.nansum(self.posterior, axis=(0, 2)),
+                            np.nansum(self.posterior, axis=(0, 1))]
 
-        sample_idx = get_idx_sample(posterior)
+        sample_idx = get_idx_sample(self.posterior)
         r = get_dist_parameters(params_grid[0], sample_idx)
-        mi_sample, mi_median, mi_err_high, mi_err_low = r
+        self.mi_sample = r[0]
+        self.mi_median = r[1]
+        self.mi_err_high = r[2]
+        self.mi_err_low = r[3]
         r = get_dist_parameters(params_grid[1], sample_idx)
-        log10_tcool_sample, log10_tcool_median, log10_tcool_err_high, log10_tcool_err_low = r
+        self.log10_tcool_sample = r[0]
+        self.log10_tcool_median = r[1]
+        self.log10_tcool_err_high = r[2]
+        self.log10_tcool_err_low = r[3]
         r = get_dist_parameters(params_grid[2], sample_idx)
-        delta_m_sample, delta_m_median, delta_m_err_high, delta_m_err_low = r
-        r = get_other_params(mi_sample, log10_tcool_sample, delta_m_sample,
-                             self.models0)
-        mf_sample, log10_tms_sample, log10_ttot_sample = r
+        self.delta_m_sample = r[0]
+        self.delta_m_median = r[1]
+        self.delta_m_err_high = r[2]
+        self.delta_m_err_low = r[3]
 
-        results_plot = calc_percentiles(log10_tms_sample,
-                                        log10_tcool_sample,
-                                        log10_ttot_sample, mi_sample,
-                                        mf_sample,
+        r = get_other_params(self.mi_sample, self.log10_tcool_sample,
+                             self.delta_m_sample, self.models0)
+        self.mf_sample = r[0]
+        self.log10_tms_sample = r[1]
+        self.log10_ttot_sample = r[2]
+
+        results_plot = calc_percentiles(self.log10_tms_sample,
+                                        self.log10_tcool_sample,
+                                        self.log10_ttot_sample, self.mi_sample,
+                                        self.mf_sample,
                                         self.high_perc, self.low_perc)
 
         if self.datatype == 'yr':
-            tms_sample_dummy = log10_tms_sample
-            tcool_sample_dummy = log10_tcool_sample
-            ttot_sample_dummy = log10_ttot_sample
-            results_i = calc_percentiles(10 ** log10_tms_sample,
-                                         10 ** log10_tcool_sample,
-                                         10 ** log10_ttot_sample, mi_sample,
-                                         mf_sample,
+            tms_sample_dummy = self.log10_tms_sample
+            tcool_sample_dummy = self.log10_tcool_sample
+            ttot_sample_dummy = self.log10_ttot_sample
+            results_i = calc_percentiles(10 ** self.log10_tms_sample,
+                                         10 ** self.log10_tcool_sample,
+                                         10 ** self.log10_ttot_sample,
+                                         self.mi_sample,
+                                         self.mf_sample,
                                          self.high_perc, self.low_perc)
         elif self.datatype == 'Gyr':
-            tms_sample_dummy = (10 ** log10_tms_sample) / 1e9
-            tcool_sample_dummy = (10 ** log10_tcool_sample) / 1e9
-            ttot_sample_dummy = (10 ** log10_ttot_sample) / 1e9
+            tms_sample_dummy = (10 ** self.log10_tms_sample) / 1e9
+            tcool_sample_dummy = (10 ** self.log10_tcool_sample) / 1e9
+            ttot_sample_dummy = (10 ** self.log10_ttot_sample) / 1e9
             results_i = calc_percentiles(tms_sample_dummy,
                                          tcool_sample_dummy,
-                                         ttot_sample_dummy, mi_sample,
-                                         mf_sample,
+                                         ttot_sample_dummy, self.mi_sample,
+                                         self.mf_sample,
                                          self.high_perc, self.low_perc)
             results_plot = results_i
         else:
-            tms_sample_dummy = log10_tms_sample
-            tcool_sample_dummy = log10_tcool_sample
-            ttot_sample_dummy = log10_ttot_sample
+            tms_sample_dummy = self.log10_tms_sample
+            tcool_sample_dummy = self.log10_tcool_sample
+            ttot_sample_dummy = self.log10_ttot_sample
             results_i = results_plot
 
         if self.save_plots or self.display_plots:
-            self.make_grid_plot(mi_median, log10_tcool_median, delta_m_median,
-                                mi_err_low, log10_tcool_err_low,
-                                delta_m_err_low,
-                                mi_err_high, log10_tcool_err_high,
-                                delta_m_err_high,
-                                params, params_prob, posterior)
+            self.make_grid_plot(self.mi_median, self.log10_tcool_median,
+                                self.delta_m_median, self.mi_err_low,
+                                self.log10_tcool_err_low,
+                                self.delta_m_err_low,
+                                self.mi_err_high, self.log10_tcool_err_high,
+                                self.delta_m_err_high,
+                                self.params, self.params_prob, self.posterior)
 
             plot_distributions(tms_sample_dummy, tcool_sample_dummy,
-                               ttot_sample_dummy, mi_sample, mf_sample,
+                               ttot_sample_dummy, self.mi_sample,
+                               self.mf_sample,
                                datatype=self.datatype, results=results_plot,
                                display_plots=self.display_plots,
                                save_plots=self.save_plots,
@@ -399,21 +432,22 @@ class WhiteDwarf:
 
         if self.return_distributions:
             self.distributions.append([tms_sample_dummy, tcool_sample_dummy,
-                                       ttot_sample_dummy, mi_sample, mf_sample,
-                                       delta_m_sample])
+                                       ttot_sample_dummy, self.mi_sample,
+                                       self.mf_sample,
+                                       self.delta_m_sample])
 
         return results_i
 
-    def make_grid_plot(self, mi_median, log10_tott_median, delta_m_median,
-                       mi_err_low, log10_tott_err_low, delta_m_err_low,
-                       mi_err_high, log10_tott_err_high, delta_m_err_high,
+    def make_grid_plot(self, mi_median, log10_tcool_median, delta_m_median,
+                       mi_err_low, log10_tcool_err_low, delta_m_err_low,
+                       mi_err_high, log10_tcool_err_high, delta_m_err_high,
                        params, params_prob, posterior):
 
         params_label = [r'$m_{\rm ini}$', r'$\log _{10} t_{\rm cool}$',
                         r'$\Delta _{\rm m}$']
-        res = [mi_median, log10_tott_median, delta_m_median]
-        res_err_low = [mi_err_low, log10_tott_err_low, delta_m_err_low]
-        res_err_high = [mi_err_high, log10_tott_err_high, delta_m_err_high]
+        res = [mi_median, log10_tcool_median, delta_m_median]
+        res_err_low = [mi_err_low, log10_tcool_err_low, delta_m_err_low]
+        res_err_high = [mi_err_high, log10_tcool_err_high, delta_m_err_high]
         title = r"${{{0:.2f}}}_{{-{1:.2f}}}^{{+{2:.2f}}}$"
         f, axs = plt.subplots(3, 3, figsize=(10, 10), sharex='col')
 
