@@ -2,7 +2,7 @@
 wdwarfdate
 ==========
 
-*wdwarfdate* is a Python open source code which estimates the total age of a white dwarf from an effective temperature and a surface gravity in a Bayesian framework. *wdwarfdate* runs a chain of models assuming single star evolution and estimate the following parameters and their uncertainties: total age of the object, mass and cooling age of the white dwarf and mass and lifetime of the progenitor star. Checkout the documentation for *wdwarfdate* [here](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
+`wdwarfdate` is a Python open source code which derives the total age of a white dwarf from an effective temperature and a surface gravity in a Bayesian framework. *wdwarfdate* runs a chain of models assuming single star evolution and estimate the following parameters and their uncertainties: total age of the object, mass and cooling age of the white dwarf and mass and lifetime of the progenitor star. Checkout the documentation for *wdwarfdate* [here](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
 
 
 Installation
@@ -41,7 +41,7 @@ loggs = np.array([8.16,8.526])
 loggs_err = np.array([0.084,0.126])
 ```
 
-To run *wdwarfdate* we first set up the object WhiteDwarf with the parameters of the models we want to use. The code will sample the posterior distribution defined by the chosen models using the grid method. The parameter which are being sampled are the mass of the progenitor star, the cooling age of the white dwarf and a &#916;m parameter to model the scatter in the initial-to-final mass relation. The limits of the grid will be set automatically but can be set manually in this step too using `min_mi` and `max_mi` for the mass, and `min_log10_tcool` and `max_log10_tcool` for the cooling age. 
+To run *wdwarfdate* we first set up the object WhiteDwarf with the parameters of the models we want to use. The code will sample the posterior distribution defined by the chosen models using the grid method. The parameters which are being sampled are the mass of the progenitor star, the cooling age of the white dwarf and a &#916;m parameter to model the scatter in the initial-to-final mass relation. The limits of the grid will be set automatically but can be set manually in this step too using `min_mi` and `max_mi` for the mass, and `min_log10_tcool` and `max_log10_tcool` for the cooling age. 
 
 ```python
 WD = wdwarfdate.WhiteDwarf(teffs,teffs_err,loggs,loggs_err,
