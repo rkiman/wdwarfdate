@@ -25,11 +25,6 @@ In order to estimate an age for a white dwarf a chain of models have to be used.
 
 
 
-The Figure below shows the cooling tracks used by :math:`\texttt{wdwarfdate}` which indicate the limits in effective temperature and surface gravity in more detail for the models of thich and thin H layers (Kiman et al. in prep).
-
-.. image:: cooling_seq.png
-   :width: 600
-
 
 Constraints
 ===========
