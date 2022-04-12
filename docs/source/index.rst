@@ -56,8 +56,6 @@ This is an `astropy Table <https://docs.astropy.org/en/stable/table/index.html>`
 - :data:`initial_mass` Median values of initial mass distribution, meaning the mass of the progenitor
 - :data:`final_mass` Median values of final mass distribution, meaning the mass of the white dwarf
 
-When estimate these parameters using :math:`\texttt{wdwarfdate}`, it outputs several plot which are useful to visualize the results. For a detailed description of the output plots, see the Tutorials in this documentation.
-
 
 .. User Guide
 .. ----------
@@ -80,7 +78,7 @@ When estimate these parameters using :math:`\texttt{wdwarfdate}`, it outputs sev
    :caption: Tutorials
 
    tutorials/bayesian_method.ipynb
-   tutorials/fast_test.ipynb
+   tutorials/customize_plots.ipynb
 
 
 
