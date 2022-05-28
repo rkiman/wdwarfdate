@@ -2,7 +2,7 @@
 wdwarfdate
 ==========
 
-`wdwarfdate` is a Python open source code which derives the total age of a white dwarf from an effective temperature and a surface gravity in a Bayesian framework. `wdwarfdate` runs a chain of models assuming single star evolution and estimate the following parameters and their uncertainties: total age of the object, mass and cooling age of the white dwarf and mass and lifetime of the progenitor star. Checkout the documentation for `wdwarfdate` [here](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
+`wdwarfdate` is a Python open source code which derives the Bayesian total age of a white dwarf from an effective temperature and a surface gravity. `wdwarfdate` runs a chain of models assuming single star evolution and estimate the following parameters and their uncertainties: total age of the object, mass and cooling age of the white dwarf and mass and lifetime of the progenitor star. Checkout the documentation for `wdwarfdate` [here](https://wdwarfdate.readthedocs.io/en/latest/).
 
 
 Installation
@@ -58,7 +58,7 @@ Then we run the parameter estimation.
 ```python
 WD.calc_wd_age()
 ```
-`wdwarfdate` allows us to select which models we want to use for the white dwarfs: the initial-to-final mass relation, DA or non-DA, and the parameter for the isochrone of the progenitor star, as shown above. Also with the *datatype* option we can select the units of the resulting ages. The results of the parameter estimation will be saved in an [*astropy* Table](https://docs.astropy.org/en/stable/table/index.html), which is saved in the object WD. To display the results we can do
+`wdwarfdate` allows us to select which models we want to use for the white dwarfs: the initial-to-final mass relation, the cooling tracks for DA or non-DA white dwarfs, and the parameters for the stellar evolutionary model of the progenitor star ([Fe/H] and rotation), as shown above. Also with the *datatype* option we can select the units of the resulting ages. The results of the parameter estimation will be saved in an [*astropy* Table](https://docs.astropy.org/en/stable/table/index.html), which is saved in the object WD. To display the results we can do
 
 ```python
 WD.results
@@ -79,7 +79,7 @@ When we run `wdwarfdate` we can set `display_plots=True` to display the grid plo
 ![Distributions plot](https://github.com/rkiman/wdwarfdate/blob/master/docs/source/tutorials/results/teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_distributions.png)
 
 
-For more explanation and examples checkout the [documentation](https://wdwarfdate.readthedocs.io/en/latest/) (under construction).
+For more explanation and examples checkout the [documentation](https://wdwarfdate.readthedocs.io/en/latest/).
 
 
 Citation

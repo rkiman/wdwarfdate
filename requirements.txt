@@ -2,7 +2,4 @@
 numpy
 astropy
 matplotlib
-emcee
-corner
 scipy
-daft

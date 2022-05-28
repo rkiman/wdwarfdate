@@ -154,7 +154,8 @@ def calc_cooling_age_fast_test(teff_dist, logg_dist, within_limits, model):
 
     mass_array = np.array([x for x in set(model_mass)])
     mass_array = np.sort(mass_array)
-    age_array = np.array([np.nanmax(model_age[model_mass == x]) for x in mass_array])
+    age_array = np.array([np.nanmax(model_age[model_mass == x])
+                          for x in mass_array])
 
     f_age_mass = interpolate.CubicSpline(mass_array, age_array)
 

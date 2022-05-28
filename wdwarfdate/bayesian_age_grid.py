@@ -43,13 +43,17 @@ def calc_posterior_grid(teff_i, e_teff_i, logg_i, e_logg_i, models, n_mi,
     """
     Parameters
     ----------
-    min_mi : scalar. Minimum initial mass in which to run the grid. The chosen value will be the maximum between
-             min_mi and 0.1. Units of solar masses.
-    max_mi : scalar. Maximum initial mass in which to run the grid. Units of solar masses.
-    min_ttot : scalar. Minimum total age in which to run the grid. The chosen value will be the maximum between
-               min_mi and 40 Myr. Units of log10(yr).
-    max_ttot : scalar. Maximum total age in which to run the grid. The chosen value will be the minimum between
-               max_ttot and 13.8 Gyr. Units of log10(yr).
+    min_mi : scalar. Minimum initial mass in which to run the grid.
+             The chosen value will be the maximum between min_mi and 0.1.
+             Units of solar masses.
+    max_mi : scalar. Maximum initial mass in which to run the grid.
+             Units of solar masses.
+    min_ttot : scalar. Minimum total age in which to run the grid.
+               The chosen value will be the maximum between min_mi and 40 Myr.
+               Units of log10(yr).
+    max_ttot : scalar. Maximum total age in which to run the grid.
+               The chosen value will be the minimum between max_ttot and
+               13.8 Gyr. Units of log10(yr).
     """
     model_ifmr, isochrone_model, cooling_models = models
 
@@ -103,8 +107,6 @@ def calc_posterior_grid(teff_i, e_teff_i, logg_i, e_logg_i, models, n_mi,
     log_post = log_likelihood + log_prior_tcool + log_prior_mi + log_prior_delta_m
 
     # Calculate and normalize posterior
-    #practical_norm = np.nanmax(log_post)
-    #log_post_practical_norm = log_post - practical_norm
     exp_posterior = np.exp(log_post)
     posterior = exp_posterior / np.nansum(exp_posterior)
 

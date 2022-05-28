@@ -43,7 +43,7 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
                  * (initial_mass < 2.85))
         mask2 = (2.85 <= initial_mass) * (initial_mass < 3.60)
         mask3 = ((3.60 <= initial_mass)
-                 * (initial_mass < (min([max_initial_mass_mist, 8.2]))))  # 7.20]))))
+                 * (initial_mass < (min([max_initial_mass_mist, 8.2]))))
         final_mass[mask0] = 0.5554  # 0.83 * 0.08 + 0.489
         final_mass[mask1] = initial_mass[mask1] * 0.08 + 0.489
         final_mass[mask2] = initial_mass[mask2] * 0.187 + 0.184
@@ -60,7 +60,7 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         mask1 = (0.87 <= initial_mass) * (initial_mass < 2.8)
         mask2 = (2.8 <= initial_mass) * (initial_mass < 3.65)
         mask3 = ((3.65 <= initial_mass)
-                 * (initial_mass < (min([max_initial_mass_mist, 8.20]))))  # 7.20]))))
+                 * (initial_mass < (min([max_initial_mass_mist, 8.20]))))
         final_mass[mask0] = 0.551951  # 0.87*0.0873+0.476
         final_mass[mask1] = initial_mass[mask1] * 0.0873 + 0.476
         final_mass[mask2] = initial_mass[mask2] * 0.181 + 0.210

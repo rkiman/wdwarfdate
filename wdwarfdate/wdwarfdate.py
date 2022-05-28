@@ -16,8 +16,8 @@ class WhiteDwarf:
                  model_wd='DA', feh='p0.00', vvcrit='0.0',
                  model_ifmr='Cummings_2018_MIST', high_perc=84, low_perc=16,
                  datatype='yr', path='results/', n_mc=2000,
-                 n_mi=256, n_log10_tcool=256, n_delta=128, min_mi='',
-                 max_mi='', min_log10_tcool='', max_log10_tcool='',
+                 n_mi=256, n_log10_tcool=256, n_delta=128,
+                 min_mi='', max_mi='', min_log10_tcool='', max_log10_tcool='',
                  tail=0.005, adjust_tail=True,
                  return_distributions=False, save_plots=False,
                  display_plots=True):
@@ -25,80 +25,87 @@ class WhiteDwarf:
         Parameters
         ----------
         teff0 : scalar, array. Effective temperature of the white dwarf
-        e_teff0 : scalar, array. Error in the effective temperature of the white
-        dwarf
+        e_teff0 : scalar, array. Uncertainty of teff0
         logg0 : scalar, array. Surface gravity of the white dwarf
-        e_logg0 : scalar, array. Error in surface gravity of the white dwarf
-        method : string. 'bayesian' or 'fast_test'. Bayesian will the grid
-                 method and output the results. fast_test runs a normal
-                 distribution centered at the value with a std of the error
-                 through all the models chosen.
-        model_wd : string. Spectral type of the white dwarf 'DA' or 'non-DA'.
-        feh : string. Parameter for the isochrone. Can be: 'm4.00','m1.00',
-              'p0.00' or 'p0.50'
-        vvcrit : string. Parameter for the isochrone. Can be: '0.0' or '0.4'
-        model_ifmr : string. Initial to final mass relation model. Can be
-                     'Cummings_2018_MIST', 'Cummings_2018_PARSEC',
-                     'Salaris_2009' or 'Williams_2009'.
-        high_perc : scalar. Percentage at which the high errors will be
+        e_logg0 : scalar, array. Uncertainty of logg0
+        method : string. 'bayesian' or 'fast_test'. Bayesian will run the grid
+                 method and output the results. fast_test runs a Monte Carlo
+                 error propagation from a normal distribution for the two
+                 input parameters.
+        model_wd : string. Cooling track models to be used for the white dwarf
+                   evolution: 'DA' or 'non-DA'.
+        feh : string. Metallicity of the stellar evolution model. It can be:
+              'm4.00','m1.00', 'p0.00' or 'p0.50'.
+        vvcrit : string. Rotation of the stellar evolution model.
+                 It can be: '0.0' or '0.4'.
+        model_ifmr : string. Initial to final mass relation model. It can be
+                     'Marigo_2020', 'Cummings_2018_MIST',
+                     'Cummings_2018_PARSEC', 'Salaris_2009' or 'Williams_2009'.
+        high_perc : scalar. Percentage at which the upper errors will be
                     calculated.
-        low_perc : scalar. Percentage at which the low errors will be
+        low_perc : scalar. Percentage at which the lower errors will be
                    calculated.
-        datatype : string. 'yr', 'Gyr' or 'log'. Units in which the results
-                   will be output.
-        path : string. Name of the folder where all the plots and distribution
-               file will be save. If it doesn't exist, the code will create it.
-        n_mc : scalar. Length of the distribution for each parameter. Only
-               useful in fast_test mode.
+        datatype : string. 'yr', 'Gyr' or 'log'. Units of the results.
+        path : string. Name of the folder where all the plots will be save.
+               If it doesn't exist, the code will create it.
+        n_mc : scalar. Length of the normal distributions for teff and logg
+               which are used to do the Monte Carlo propagation of
+               uncertainties. Only useful in fast_test method.
         n_mi : scalar. Number of bins for the initial mass axis of the grid.
+               Only useful in the Bayesian method.
         n_log10_tcool : scalar. Number of bins for the cooling age axis of
-                        the grid.
+                        the grid. Only useful in the Bayesian method.
         n_delta: scalar. Number of bins for the delta parameter axis of the
-                 grid.
+                 grid. Only useful in the Bayesian method.
         min_mi : scalar. Minimum limit for the the initial mass axis of the
-                 grid.
+                 grid. Only useful in the Bayesian method.
         max_mi : scalar. Maximum limit for the the initial mass axis of the
-                 grid.
+                 grid. Only useful in the Bayesian method.
         min_log10_tcool : scalar. Minimum limit for the the cooling age axis
-                          of the grid.
+                          of the grid. Only useful in the Bayesian method.
         max_log10_tcool : scalar. Maximum limit for the the cooling age axis
-                          of the grid.
+                          of the grid. Only useful in the Bayesian method.
         tail : scalar. Percentage cut off for log probability: 0.95 would
                cut the probability close to the highest probability value,
-               0 does not remove anything.
+               0 does not remove anything. Only useful in the Bayesian method.
         adjust_tail : True or False. If True, the limits of the grid will be
-                      adjusted automatically.
-        return_distributions : True or False. In the fast test method adds
+                      optimized automatically. Only useful in the Bayesian
+                      method.
+        return_distributions : True or False. In the fast_test method adds
                                columns to the table with results with
                                the distributions of each parameter. In the
                                Bayesian method it creates a new attribute for
                                the object WhiteDwarfs with the distributions
-                               for the total age only.
-        save_plots : True or False. If True, plots and saves the figures
-                   describing the result in the path given.
-        display_plots : True or False. If True, will display plots after
-                        making them. Good option if working in jupyter
-                        notebook.
+                               for the parameters.
+        save_plots : True or False. If True, the code saves the figures
+                     describing the result in the path given.
+        display_plots : True or False. If True, the code will display plots
+                        after making them.
         """
 
         self.teff = teff0
         self.e_teff = e_teff0
         self.logg = logg0
         self.e_logg = e_logg0
+        # If the input parameters are scalars, we make them an array
         if not isinstance(teff0, np.ndarray):
             self.teff = np.array([teff0])
             self.e_teff = np.array([e_teff0])
             self.logg = np.array([logg0])
             self.e_logg = np.array([e_logg0])
+        # Initialize the parameters of a single WD, to run one WD in case
+        # an array is given
         self.teff_i = 0
         self.e_teff_i = 0
         self.logg_i = 0
         self.e_logg_i = 0
+        # Initialize models
         self.method = method
         self.model_wd = model_wd
         self.feh = feh
         self.vvcrit = vvcrit
         self.model_ifmr = model_ifmr
+        # Initialize extra parameters
         self.n = len(self.teff)
         self.high_perc = high_perc
         self.low_perc = low_perc
@@ -108,8 +115,10 @@ class WhiteDwarf:
         self.save_plots = save_plots
         self.display_plots = display_plots
         self.n_mc = n_mc
-        self.max_age = np.log10(15 * 1e9)
         self.return_distributions = return_distributions
+        # Set limit of maximum age allowed
+        self.max_age = np.log10(15 * 1e9)
+
         # Bayesian method objects.
         if self.method == 'bayesian':
             self.distributions = []
@@ -117,9 +126,12 @@ class WhiteDwarf:
                                min_log10_tcool, max_log10_tcool,
                                n_mi, n_log10_tcool, n_delta,
                                tail, adjust_tail]
+            # If user selected all the parameters for the grid, the code does
+            # not run the optimization of the grid limits.
             if all([x != '' for x in self.set_values]):
                 self.adjust_tail = False
 
+            # Initialize results astropy Table
             self.results = Table(
                 names=('ms_age_median', 'ms_age_err_low', 'ms_age_err_high',
                        'cooling_age_median', 'cooling_age_err_low',
@@ -131,6 +143,7 @@ class WhiteDwarf:
 
         # Fast-test method objects.
         elif self.method == 'fast_test':
+            # Initialize results astropy Table
             self.results_fast_test = Table(
                 names=('ms_age_median', 'ms_age_err_low', 'ms_age_err_high',
                        'cooling_age_median', 'cooling_age_err_low',
@@ -141,20 +154,23 @@ class WhiteDwarf:
                        'final_mass_err_low', 'final_mass_err_high'))
 
     def calc_wd_age(self):
+        """
+        Main function to calculate the parameters of the WD. It fills out the
+        astropy Table with the results for the method selected.
+
+        """
         # If it doesn't exist, creates a folder to save results.
         if self.save_plots:
             if not os.path.exists(self.path):
                 os.makedirs(self.path)
 
         if self.method == 'bayesian':
+            # Look over every WD given
             for x, y, z, w in zip(self.teff, self.e_teff, self.logg,
                                   self.e_logg):
-                print(f'Running Teff = {np.round(x, 2)}'
-                      + r' +/- '
-                      + f'{np.round(y, 2)} K, '
-                      + f'logg = {np.round(z, 2)}'
-                      + r' +/- '
-                      + f'{np.round(w, 2)}')
+                print(f'Running Teff = {np.round(x, 2)}' + r' +/- '
+                      + f'{np.round(y, 2)} K, ' + f'logg = {np.round(z, 2)}'
+                      + r' +/- ' + f'{np.round(w, 2)}')
                 self.teff_i = x
                 self.e_teff_i = y
                 self.logg_i = z
@@ -168,19 +184,34 @@ class WhiteDwarf:
                     # Set name of path and wd models to identify results
                     self.wd_path_id = self.get_wd_path_id()
 
+                    # Estimate the age of the WDs using the Bayesian method
                     results_i = self.calc_wd_age_bayesian()
-
+                # Add results to the final Table
                 self.results.add_row(results_i)
 
         elif self.method == 'fast_test':
+            # Estimate the age of the WDs using the fast_test method
             self.calc_wd_age_fast_test()
+        else:
+            print("Please select method 'bayesian' or 'fast_test'.")
 
     def calc_wd_age_bayesian(self):
+        """
+        Estimates the parameters of a single WD using the Bayesian method.
 
+        Returns
+        -------
+        Array with the results for the individual WD given.
+        """
+
+        # Initial calculation of the parameters of the WD and the progenitor
         r = calc_single_star_params(self.teff_i, self.logg_i, self.model_wd,
                                     self.model_ifmr, self.feh, self.vvcrit)
         cool_age, final_mass, initial_mass, ms_age = r
 
+        # According to the initial calculation of the parameters, the code
+        # raises warnings for different cases where the estimation will not be
+        # accurate.
         if final_mass > 1.1 or final_mass < 0.45:
             print('Warning: Final mass is outside the range normally ' +
                   'considered as single star evolution (0.45-1.1 Msun).')
@@ -191,32 +222,36 @@ class WhiteDwarf:
                   'by Cummings et al. (2018) because the MIST models tend to '
                   'underestimate the mass of the progenitor star.')
 
+        # According to the initial calculation of the parameters, the code
+        # returns nans, uses the fast_test method or runs the Bayesian method.
         if np.isnan(cool_age + final_mass) or cool_age < np.log10(3e5):
             print("Warning: Effective temperature and/or surface " +
                   "gravity are outside of the allowed values of " +
                   "the models.")
             results_i = np.ones(15) * np.nan
         elif ~np.isnan(final_mass) and np.isnan(initial_mass):
+            # In the case where the mass of the WD is outside the limits of
+            # the IFMR, but not outside the limits of the cooling tracks, the
+            # code calculates the final mass and cooling age with the
+            # fast_test method
             print("Warning: Final mass is outside the range allowed " +
                   "by the IFMR. Cannot estimate initial mass, main " +
                   "sequence age or total age. Final mass and " +
                   "cooling age were calculated with the fast_test " +
                   f"method. Final mass ~ {np.round(final_mass, 2)} Msun ")
-            # Calculate final mass and cooling age with fast_test method
             results_i = self.calc_final_mass_cooling_age()
         elif (~np.isnan(final_mass + cool_age + initial_mass)
               and np.isnan(ms_age)):
             print("Warning: Initial mass is outside of the range " +
-                  "allowed by the MIST isochrones. Cannot estimate " +
+                  "allowed by the stellar evolution models. Cannot estimate " +
                   "main sequence age or total age. Run the fast_test " +
                   "method to obtain a result for the rest of the " +
                   "parameters. " +
                   f"Initial mass ~ {np.round(initial_mass, 2)} Msun ")
             results_i = self.calc_final_mass_cooling_age()
         else:
-            if(final_mass < 0.56
-                    or (final_mass > 1.2497
-                        and self.model_ifmr == 'Cummings_2018_PARSEC')):
+            if(final_mass < 0.56 or (final_mass > 1.2497 and
+                                self.model_ifmr == 'Cummings_2018_PARSEC')):
                 print("Warning: The IFMR is going to be extrapolated to " +
                       "calculate initial mass, main sequence " +
                       "age and total age. Use these parameters with " +
@@ -291,6 +326,7 @@ class WhiteDwarf:
 
             assert all([x != '' for x in test_lim])
 
+            # Once the grid is set, it calculates the posterior in the grid.
             res = calc_posterior_grid(self.teff_i, self.e_teff_i, self.logg_i,
                                       self.e_logg_i, self.models0,
                                       n_mi=256, n_log10_tcool=256,
@@ -323,9 +359,9 @@ class WhiteDwarf:
                 self.min_log10_tcool = np.min(tcool_array_clean)
             if self.max_log10_tcool == '':
                 self.max_log10_tcool = np.max(tcool_array_clean)
-        # If adjust_tail is false, use the the wide range for the evaluation
-        # of the posterior, or the values set by the user, if any.
         else:
+            # If adjust_tail is false, use the the wide range for the evaluation
+            # of the posterior, or the values set by the user, if any.
             if self.min_mi == '':
                 self.min_mi = mi_min_wide_range
             if self.max_mi == '':
@@ -358,6 +394,8 @@ class WhiteDwarf:
                             np.nansum(self.posterior, axis=(0, 2)),
                             np.nansum(self.posterior, axis=(0, 1))]
 
+        # Obtain sample of the parameters that are being sample, together
+        # with the median and uncertainties.
         sample_idx = get_idx_sample(self.posterior)
         r = get_dist_parameters(params_grid[0], sample_idx)
         self.mi_sample = r[0]
@@ -375,18 +413,23 @@ class WhiteDwarf:
         self.delta_m_err_high = r[2]
         self.delta_m_err_low = r[3]
 
+        # From the sample of the mi, tcool and delta_m it obtains the
+        # samples of the rest of the parameters.
         r = get_other_params(self.mi_sample, self.log10_tcool_sample,
                              self.delta_m_sample, self.models0)
         self.mf_sample = r[0]
         self.log10_tms_sample = r[1]
         self.log10_ttot_sample = r[2]
 
+        # Using the samples of the parameters it calculates medians and
+        # uncertainties.
         results_plot = calc_percentiles(self.log10_tms_sample,
                                         self.log10_tcool_sample,
                                         self.log10_ttot_sample, self.mi_sample,
                                         self.mf_sample,
                                         self.high_perc, self.low_perc)
 
+        # Preparing the results to be saved with the unit selected.
         if self.datatype == 'yr':
             tms_sample_dummy = self.log10_tms_sample
             tcool_sample_dummy = self.log10_tcool_sample
@@ -413,6 +456,7 @@ class WhiteDwarf:
             ttot_sample_dummy = self.log10_ttot_sample
             results_i = results_plot
 
+        # Plot and/or save results
         if self.save_plots or self.display_plots:
             self.make_grid_plot(self.mi_median, self.log10_tcool_median,
                                 self.delta_m_median, self.mi_err_low,
@@ -430,6 +474,7 @@ class WhiteDwarf:
                                save_plots=self.save_plots,
                                path = self.wd_path_id)
 
+        # Adds the samples to a distributions parameter of WhiteDwarf object.
         if self.return_distributions:
             self.distributions.append([tms_sample_dummy, tcool_sample_dummy,
                                        ttot_sample_dummy, self.mi_sample,
@@ -442,7 +487,11 @@ class WhiteDwarf:
                        mi_err_low, log10_tcool_err_low, delta_m_err_low,
                        mi_err_high, log10_tcool_err_high, delta_m_err_high,
                        params, params_prob, posterior):
+        """
+        Makes grid plot for the parameters that are being sampled: mi, tcool
+        and delta_m.
 
+        """
         params_label = [r'$m_{\rm ini}$', r'$\log _{10} t_{\rm cool}$',
                         r'$\Delta _{\rm m}$']
         res = [mi_median, log10_tcool_median, delta_m_median]
@@ -456,33 +505,49 @@ class WhiteDwarf:
                 if i == j:
                     axs[i, j].plot(params[i], params_prob[i], '.-')
                     axs[i, j].axvline(x=res[i], color='k')
-                    axs[i, j].axvline(x=res[i] - res_err_low[i], color='k', linestyle='--')
-                    axs[i, j].axvline(x=res[i] + res_err_high[i], color='k', linestyle='--')
+                    axs[i, j].axvline(x=res[i] - res_err_low[i], color='k',
+                                      linestyle='--')
+                    axs[i, j].axvline(x=res[i] + res_err_high[i], color='k',
+                                      linestyle='--')
                     axs[i, j].set_yticklabels([])
                     axs[i, j].set_ylim(0,)
-                    if any(np.array([np.round(res[i], 2), np.round(res_err_low[i], 2),
+                    if any(np.array([np.round(res[i], 2),
+                                     np.round(res_err_low[i], 2),
                                      np.round(res_err_high[i], 2)]) == 0):
                         dec_num = 2
                         while any(np.array([np.round(res[i], dec_num),
                                             np.round(res_err_low[i], dec_num),
-                                            np.round(res_err_high[i], dec_num)]) == 0):
+                                            np.round(res_err_high[i],
+                                                     dec_num)]) == 0):
                             dec_num += 1
-                            title2 = r"${{{0:." + str(dec_num) + "f}}}_{{-{1:." + str(dec_num) + "f}}}^{{+{2:." + str(
-                                dec_num) + "f}}}$"
-                            axs[i, j].set_title(params_label[i] + ' = ' + title2.format(np.round(res[i], dec_num),
-                                                                                        np.round(res_err_low[i],
-                                                                                                 dec_num),
-                                                                                        np.round(res_err_high[i],
-                                                                                                 dec_num)))
+                            title2 = (r"${{{0:." + str(dec_num)
+                                      + "f}}}_{{-{1:." + str(dec_num)
+                                      + "f}}}^{{+{2:." + str(dec_num)
+                                      + "f}}}$")
+                            res_i = [np.round(res[i], dec_num),
+                                     np.round(res_err_low[i],dec_num),
+                                     np.round(res_err_high[i],dec_num)]
+                            axs[i, j].set_title(params_label[i]
+                                                + ' = '
+                                                + title2.format(res_i[0],
+                                                                res_i[1],
+                                                                res_i[2]))
                     else:
-                        axs[i, j].set_title(params_label[i] + ' = ' + title.format(np.round(res[i], 2),
-                                                                                   np.round(res_err_low[i], 2),
-                                                                                   np.round(res_err_high[i], 2)))
+                        res_i = [np.round(res[i], 2),
+                                 np.round(res_err_low[i], 2),
+                                 np.round(res_err_high[i], 2)]
+                        axs[i, j].set_title(params_label[i]
+                                            + ' = '
+                                            + title.format(res_i[0],
+                                                           res_i[1],
+                                                           res_i[2]))
                 elif i > j:
                     options = np.array([0, 1, 2])
                     mask = np.array([x not in [i, j] for x in options])
                     axis_sum = options[mask][0]
-                    axs[i, j].contourf(params[j], params[i], np.nansum(posterior, axis=(axis_sum)).transpose(),
+                    axs[i, j].contourf(params[j], params[i],
+                                       np.nansum(posterior,
+                                                 axis=(axis_sum)).transpose(),
                                        cmap='gist_yarg')
                     if j == 1:
                         axs[i, j].set_yticklabels([])
@@ -495,9 +560,11 @@ class WhiteDwarf:
                 if j == 0 and i != 0:
                     axs[i, j].set_ylabel(params_label[i])
 
-                axs[i, j].tick_params('both', direction='in', top=True, right=True)
+                axs[i, j].tick_params('both', direction='in',
+                                      top=True, right=True)
                 axs[i, j].minorticks_on()
-                axs[i, j].tick_params('both', which='minor', direction='in', top=True, right=True)
+                axs[i, j].tick_params('both', which='minor', direction='in',
+                                      top=True, right=True)
         plt.tight_layout()
         if self.save_plots:
             plt.savefig(self.wd_path_id + '_gridplot.png', dpi=300)
@@ -580,9 +647,10 @@ class WhiteDwarf:
 
     def calc_wd_age_fast_test(self):
         """
-        Calculated white dwarfs ages with a fast_test approach. Starts from normal
-        distribution of teff and logg based on the errors and passes the full
-        distribution through the same process to get a distribution of ages.
+        Calculated white dwarfs ages with a fast_test approach. Starts from
+        normal distribution of teff and logg based on the errors and
+        performs a Monte Carlo propagations of uncertainties to estimate the
+        parameters of the white dwarf and the progenitor.
         """
 
         distributions = estimate_parameters_fast_test(self.teff, self.e_teff,
@@ -626,10 +694,12 @@ class WhiteDwarf:
             self.results_fast_test[label + '_err_low'] = low_err
             self.results_fast_test[label + '_err_high'] = high_err
 
+        # Save distributions for the parameters estimated
         if self.return_distributions:
             for label, dist in zip(labels, self.distributions):
                 self.results_fast_test[label + '_dist'] = dist
 
+        # Plot results
         if self.save_plots or self.display_plots:
             self.plot_distributions_fast_test()
 

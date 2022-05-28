@@ -73,7 +73,8 @@ def plot_distributions(ms_age, cooling_age, total_age,
                                 np.round(results[i + 1], dec_num),
                                 np.round(results[i + 2], dec_num)]) == 0):
                 dec_num += 1
-            title2 = r"${{{0:." + str(dec_num) + "f}}}_{{-{1:." + str(dec_num) + "f}}}^{{+{2:." + str(dec_num) + "f}}}$"
+            title2 = (r"${{{0:." + str(dec_num) + "f}}}_{{-{1:." + str(dec_num)
+                      + "f}}}^{{+{2:." + str(dec_num) + "f}}}$")
             ax.set_title(title2.format(np.round(results[i], dec_num),
                                        np.round(results[i + 1], dec_num),
                                        np.round(results[i + 2], dec_num)))
@@ -118,11 +119,10 @@ def check_ranges(teff, logg, model):
                                                      model_age,
                                                      fill_value=np.nan)
     if ~(f_cooling_age(logg, teff) > 3e5):
-        print(
-            f"Warning: Effective temperature and surface temperature ({teff} and {logg}) "
-            "are outside the range covered "
-            "by the cooling tracks from "
-            "http://www.astro.umontreal.ca/~bergeron/CoolingModels/")
+        print(f"Warning: Effective temperature and surface temperature " +
+              f"({teff} and {logg}) are outside the range covered " +
+              "by the cooling tracks from " +
+              "http://www.astro.umontreal.ca/~bergeron/CoolingModels/")
 
 
 def calc_single_star_params(teff, logg, model_wd, model_ifmr, feh, vvcrit):
