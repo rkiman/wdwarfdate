@@ -72,7 +72,7 @@ This table will have one row for each teff and logg given and an estimation of t
 - *initial_mass:* Initial mass, meaning the mass of the progenitor star.
 - *final_mass:* Final mass, meaning the mass of the white dwarf.
 
-When we run `wdwarfdate` we can set `display_plots=True` to display the grid plot with the parameters which were sampled with the code and an extra plot with the distributions of all the parameters, as shown below for the first white dwarf selected above. If we set `save_plots=True`, these plots will be saved in a folder called results, unless another path is indicated. 
+When we run `wdwarfdate` we can set `display_plots=True` to display the grid plot with the parameters which were sampled with the code and an extra plot with the distributions of all the parameters, as shown below for the first white dwarf selected above. If we set `save_plots=True`, these plots will be saved in a folder called results, unless another path is indicated. Below we show the results for the white dwarf with Teff = 19250 and logg = 8.16.
 
 ![Grid plot](https://github.com/rkiman/wdwarfdate/blob/master/docs/source/tutorials/results/teff_19250_logg_8.16_feh_p0.00_vvcrit_0.0_DA_Cummings_2018_MIST_gridplot.png)
 
