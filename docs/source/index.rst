@@ -2,7 +2,7 @@
 wdwarfdate
 ==========
 
-:math:`\texttt{wdwarfdate}` is a Python open source code which estimates the total age of a white dwarf from an effective temperature and a surface gravity in a Bayesian framework. :math:`\texttt{wdwarfdate}` runs a chain of models assuming single star evolution and estimate the following parameters and their uncertainties: total age of the object, mass and cooling age of the white dwarf and mass and lifetime of the progenitor star.
+:math:`\texttt{wdwarfdate}` is a Python open source code which derives a Bayesian age of a white dwarf from an effective temperature and a surface gravity. :math:`\texttt{wdwarfdate}` runs a chain of models assuming single star evolution and estimate the following parameters and their uncertainties: total age of the object, mass and cooling age of the white dwarf and mass and lifetime of the progenitor star.
 
 .. Contents:
 
