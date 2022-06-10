@@ -85,5 +85,5 @@ For more explanation and examples checkout the [documentation](https://wdwarfdat
 Citation
 --------
 
-If you use `wdwarfdate` in your reaserch, please cite: Kiman et al. 2022, and the IFMR, cooling models and stellar evolution models you decide to use (See Kiman et al. 2022 or documentation for references.)
+If you use `wdwarfdate` in your research, please cite: Kiman et al. 2022, and the IFMR, cooling models and stellar evolution models you decide to use (See Kiman et al. 2022 or documentation for references.)
 
