@@ -33,10 +33,6 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         Cummings, J. D., et al., Astrophys. J. 866, 21 (2018)
         based on MIST isochrones
         '''
-        # mask1 = ((max([min_initial_mass_mist, 0.83]) <= initial_mass)
-        #          * (initial_mass < 2.85))
-        # mask1 = ((max([min_initial_mass_mist, 0.45]) <= initial_mass)
-        #         * (initial_mass < 2.85))
         mask0 = ((max([min_initial_mass_mist, 0.45]) <= initial_mass)
                  * (initial_mass < 0.83))
         mask1 = ((0.83 <= initial_mass)

@@ -17,11 +17,6 @@ def calc_percentiles(ms_age, cooling_age, total_age, initial_mass,
     res_percentiles = []
 
     for dist in [ms_age, cooling_age, total_age, initial_mass, final_mass]:
-        #if all([np.isnan(x) for x in dist]):
-        #    dist_median = np.nan
-        #    dist_err_low = np.nan
-        #    dist_err_high = np.nan
-        #else:
         dist_median = np.nanpercentile(dist, 50)
         dist_err_low = dist_median - np.nanpercentile(dist, low_perc)
         dist_err_high = np.nanpercentile(dist, high_perc) - dist_median
