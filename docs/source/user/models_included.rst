@@ -18,9 +18,9 @@ In order to estimate an age for a white dwarf a chain of models have to be used.
 |                 |                  | - `Williams et al. (2009) <https://iopscience.iop.org/article/10.1088/0004-637X/693/1/355>`_                                                                                                                                                             |
 |                 +------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |                 | Stellar evolution| MESA Isochrones `available online <http://waps.cfa.harvard.edu/MIST/>`_ (`Choi et al. 2016 <https://iopscience.iop.org/article/10.3847/0004-637X/823/2/102>`_ and `Dotter 2016 <https://iopscience.iop.org/article/10.3847/0067-0049/222/1/8>`_):        |
-|                 | models           |  - :math:`{\rm Fe/H} = -4.00, -1.00, 0.00, 0.50`                                                                                                                                                                                                         |
+|                 | models           |  - :math:`[{\rm Fe/H}] = -4.00, -1.00, 0.00, 0.50`                                                                                                                                                                                                       |
 |                 |                  |  - :math:`{\rm v/vcrit} = 0.0, 0.4`                                                                                                                                                                                                                      |
-|                 |                  |  - :math:`\alpha/{\rm Fe} = 0`                                                                                                                                                                                                                           |
+|                 |                  |  - :math:`[\alpha/{\rm Fe}] = 0`                                                                                                                                                                                                                         |
 +-----------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
@@ -29,7 +29,7 @@ In order to estimate an age for a white dwarf a chain of models have to be used.
 Constraints
 ===========
 
-We summarize here the most important constraints when using :math:`\texttt{wdwarfdate}`. For a complete discussion see Kiman et al. in prep.
+We summarize here the most important constraints when using :math:`\texttt{wdwarfdate}`. For a complete discussion see Kiman et al. 2022.
 
 - Combining the limitation of the cooling tracks with the restrictions of the IFMR, the values for which :math:`\texttt{wdwarfdate}` can estimate a total age are :math:`1,500  \leqslant T_{\rm eff}  \lesssim 90,000\,K` and :math:`7.9  \lesssim \log g  \lesssim 9.3`.
 - Given that the cooling tracks assume single star evolution and C/O core for the white dwarfs, the best range of final masses to use :math:`\texttt{wdwarfdate}` is :math:`0.45-1.1\,{\rm M}_{\odot}`, because outside this range objects are not likely to have evolved as a single star.
