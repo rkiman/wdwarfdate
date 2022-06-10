@@ -79,7 +79,9 @@ def ifmr_bayesian(initial_mass, ifmr_model, min_initial_mass_mist,
         
         Mfinal = 0.339 ± 0.015 + (0.129 ± 0.004)Minit ;
         '''
-        final_mass = 0.339 + 0.129 * initial_mass
+        mask1 = ((1 <= initial_mass)
+                 * (initial_mass < 7.5))
+        final_mass[mask1] = 0.339 + 0.129 * initial_mass[mask1]
 
     elif ifmr_model == 'Marigo_2020':
         '''
@@ -183,8 +185,8 @@ def calc_initial_mass(ifmr_model, final_mass):
 
         Mfinal = 0.339 ± 0.015 + (0.129 ± 0.004)Minit ;
         '''
-
-        initial_mass = (final_mass - 0.339) / 0.129
+        mask1 = (0.5 <= final_mass) * (final_mass < 1.1)
+        initial_mass[mask1] = (final_mass[mask1] - 0.339) / 0.129
 
     return initial_mass
 

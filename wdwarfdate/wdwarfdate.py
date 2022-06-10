@@ -2,6 +2,7 @@ import numpy as np
 from astropy.table import Table
 import matplotlib.pyplot as plt
 import os
+import sys
 from .cooling_age import get_cooling_model_grid
 from .ms_age import get_isochrone_model_grid
 from .extra_func import calc_percentiles, plot_distributions
@@ -102,14 +103,31 @@ class WhiteDwarf:
         # Initialize models
         self.method = method
         self.model_wd = model_wd
+        if model_wd not in ['DA','non-DA']:
+            sys.exit("Please select one of the included model_wd: "+
+                     "'DA' or 'non-DA'")
         self.feh = feh
+        if feh not in ['m4.00','m1.00', 'p0.00', 'p0.50']:
+            sys.exit("Please select one of the included feh:'m4.00','m1.00',"+
+                     "'p0.00','p0.50'")
         self.vvcrit = vvcrit
+        if vvcrit not in ['0.0','0.4']:
+            sys.exit("Please select one of the included vvcrit: '0.0','0.4'")
         self.model_ifmr = model_ifmr
+        if model_ifmr not in ['Marigo_2020', 'Cummings_2018_MIST',
+                              'Cummings_2018_PARSEC', 'Salaris_2009',
+                              'Williams_2009']:
+            sys.exit("Please select one of the included IFMR: 'Marigo_2020',"+
+                     " 'Cummings_2018_MIST', 'Cummings_2018_PARSEC', "+
+                     "'Salaris_2009' or 'Williams_2009'")
         # Initialize extra parameters
         self.n = len(self.teff)
         self.high_perc = high_perc
         self.low_perc = low_perc
         self.datatype = datatype
+        if datatype not in ['yr', 'Gyr', 'log']:
+            sys.exit("Please select one of the included data types: "+
+                     "'yr', 'Gyr', 'log'")
         self.path = path
         self.wd_path_id = ''
         self.save_plots = save_plots
@@ -720,9 +738,12 @@ class WhiteDwarf:
             # Set name of path and wd models to identif results
             self.teff_i = x1
             self.logg_i = x2
+            e_x1 = self.e_teff[i]
+            e_x2 = self.e_logg[i]
             self.wd_path_id = self.get_wd_path_id()
 
-            print(f'Running teff:{x1} logg:{x2}')
+            print(f'Running teff:{np.round(x1,2)} +/- {np.round(e_x1,2)} ' +
+                  f'logg:{np.round(x2,2)} +/- {np.round(e_x2,2)}')
 
             if self.datatype == 'yr':
                 x3, x4, x5 = np.log10(x3), np.log10(x4), np.log10(x5)
