@@ -4,6 +4,7 @@ wdwarfdate
 
 `wdwarfdate` is a Python open source code which derives the Bayesian total age of a white dwarf from an effective temperature and a surface gravity. `wdwarfdate` runs a chain of models assuming single star evolution and estimate the following parameters and their uncertainties: total age of the object, mass and cooling age of the white dwarf and mass and lifetime of the progenitor star. Checkout the documentation for `wdwarfdate` [here](https://wdwarfdate.readthedocs.io/en/latest/).
 
+[![DOI](https://zenodo.org/badge/224479174.svg)](https://zenodo.org/badge/latestdoi/224479174)
 
 Installation
 ------------
