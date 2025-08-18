@@ -293,8 +293,8 @@ class WhiteDwarf:
 
     def get_wd_path_id(self):
         # Set the name to identify the results from each white dwarf
-        tg_name = 'teff_' + str(self.mu_i[0]) + '_logg_' \
-                  + str(np.round(self.mu_i[1],2))
+        tg_name = 'teff_' + str(self.mu[0]) + '_logg_' \
+                  + str(np.round(self.mu[1],2))
         mist_name = '_feh_' + self.feh + '_vvcrit_' + self.vvcrit
         models_name = mist_name + '_' + self.model_wd + '_' + self.model_ifmr
         return self.path + tg_name + models_name
@@ -609,10 +609,7 @@ class WhiteDwarf:
 
         """
 
-        distributions = estimate_parameters_fast_test(np.array([self.mu_i[0]]),
-                                                      np.array([np.sqrt(self.sigma_i[0,0])]),
-                                                      np.array([self.mu_i[1]]),
-                                                      np.array([np.sqrt(self.sigma_i[1,1])]),
+        distributions = estimate_parameters_fast_test(self.mu, self.sigma,
                                                       self.model_ifmr,
                                                       self.model_wd, self.feh,
                                                       self.vvcrit, self.n_mc,
