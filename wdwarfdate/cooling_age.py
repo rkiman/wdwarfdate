@@ -4,7 +4,6 @@ import inspect
 import os
 from astropy.table import Table
 
-
 def get_cooling_model(model_wd):
     """
     Interpolates a function which calculates effective temperature and

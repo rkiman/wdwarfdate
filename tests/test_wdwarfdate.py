@@ -4,7 +4,6 @@
 from wdwarfdate.wdwarfdate import WhiteDwarf
 import numpy as np
 
-
 def test_calc_wd_age():
     perc_unc = 1
     teff = 22607.142857142855
@@ -12,7 +11,7 @@ def test_calc_wd_age():
     logg = 8.971428571428572
     logg_err = perc_unc * logg / 100
 
-    WD = WhiteDwarf(teff, teff_err, logg, logg_err,
+    WD = WhiteDwarf(teff, teff_err, logg, logg_err, 
                     model_wd='DA', feh='p0.00', vvcrit='0.0',
                     model_ifmr='Cummings_2018_MIST',
                     high_perc=84, low_perc=16, method='fast_test',
@@ -39,10 +38,11 @@ def test_calc_wd_age():
     teff_err = perc_unc * teff / 100
     logg = np.array([8.971428571428572, 8.314285714285715])
     logg_err = perc_unc * logg / 100
+    cov = 0.7 * logg_err * teff_err
 
     fm_mwdd = np.array([1.2, 0.8])
     cool_age_mwdd = np.array([8.5, 8.5])
-    WD = WhiteDwarf(teff, teff_err, logg, logg_err,
+    WD = WhiteDwarf(teff, teff_err, logg, logg_err, cov = cov,
                     model_wd='DA', feh='p0.00', vvcrit='0.0',
                     model_ifmr='Cummings_2018_MIST',
                     high_perc=84, low_perc=16, method='fast_test',
