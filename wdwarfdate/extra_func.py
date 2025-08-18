@@ -128,7 +128,6 @@ def calc_single_star_params(teff, logg, model_wd, model_ifmr, feh, vvcrit):
         ifmr_dummy = model_ifmr
 
     cool_age, final_mass = calc_cooling_age(teff, logg, model_wd)
-    print(cool_age, final_mass)
 
     initial_mass = calc_initial_mass(ifmr_dummy, final_mass)
 
