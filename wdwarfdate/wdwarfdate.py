@@ -195,7 +195,7 @@ class WhiteDwarf:
 
         if self.method == 'bayesian':
             # Look over every WD given
-            for mu_i, sigma_i in zip(self.mu, self.sigma):
+            for ii, (mu_i, sigma_i) in enumerate(zip(self.mu, self.sigma)):
                 print(f'Running Teff = {np.round(mu_i[0], 2)}' + r' +/- '
                       + f'{np.round(np.sqrt(sigma_i[0,0]), 2)} K, ' + f'logg = {np.round(mu_i[1], 2)}'
                       + r' +/- ' + f'{np.round(np.sqrt(sigma_i[1,1]), 2)}')
@@ -211,7 +211,7 @@ class WhiteDwarf:
                     results_i = np.ones(15) * np.nan
                 else:
                     # Set name of path and wd models to identify results
-                    self.wd_path_id = self.get_wd_path_id()
+                    self.wd_path_id = self.get_wd_path_id(ii)
 
                     # Estimate the age of the WDs using the Bayesian method
                     results_i = self.calc_wd_age_bayesian()
@@ -291,10 +291,10 @@ class WhiteDwarf:
 
         return results_i
 
-    def get_wd_path_id(self):
+    def get_wd_path_id(self, ii):
         # Set the name to identify the results from each white dwarf
-        tg_name = 'teff_' + str(self.mu[0]) + '_logg_' \
-                  + str(np.round(self.mu[1],2))
+        tg_name = 'teff_' + str(self.mu[ii,0]) + '_logg_' \
+                  + str(np.round(self.mu[ii,1],2))
         mist_name = '_feh_' + self.feh + '_vvcrit_' + self.vvcrit
         models_name = mist_name + '_' + self.model_wd + '_' + self.model_ifmr
         return self.path + tg_name + models_name
@@ -746,7 +746,7 @@ class WhiteDwarf:
             self.logg_i = x2
             e_x1 = self.e_teff[i]
             e_x2 = self.e_logg[i]
-            self.wd_path_id = self.get_wd_path_id()
+            self.wd_path_id = self.get_wd_path_id(i)
 
             print(f'Running teff:{np.round(x1,2)} +/- {np.round(e_x1,2)} ' +
                   f'logg:{np.round(x2,2)} +/- {np.round(e_x2,2)}')
