@@ -202,8 +202,6 @@ class WhiteDwarf:
 
                 self.mu_i = mu_i
                 self.sigma_i = sigma_i
-                self.sigma_i_det = np.linalg.det(self.sigma_i)
-                self.sigma_i_inv = np.linalg.inv(self.sigma_i)
 
                 if np.any(np.isnan(self.mu_i)) or np.any(np.isnan(self.sigma_i)):
                     print('Warning: teff, logg or their uncertainties are ' +
@@ -234,7 +232,6 @@ class WhiteDwarf:
         """
 
         # Initial calculation of the parameters of the WD and the progenitor
-        print(self.mu_i[0], self.mu_i[1])
         r = calc_single_star_params(self.mu_i[0], self.mu_i[1], self.model_wd,
                                     self.model_ifmr, self.feh, self.vvcrit)
         cool_age, final_mass, initial_mass, ms_age = r
