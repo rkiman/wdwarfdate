@@ -13,7 +13,7 @@ from .bayesian_age_grid import get_other_params, get_dist_parameters, \
 
 
 class WhiteDwarf:
-    def __init__(self, teff0, e_teff0, logg0, e_logg0, method='bayesian',
+    def __init__(self, teff0, e_teff0, logg0, e_logg0, cov = None, method='bayesian',
                  model_wd='DA', feh='p0.00', vvcrit='0.0',
                  model_ifmr='Cummings_2018_MIST', high_perc=84, low_perc=16,
                  datatype='yr', path='results/', n_mc=2000,
@@ -29,6 +29,7 @@ class WhiteDwarf:
         e_teff0 : scalar, array. Uncertainty of teff0
         logg0 : scalar, array. Surface gravity of the white dwarf
         e_logg0 : scalar, array. Uncertainty of logg0
+        cov : covariance between teff and logg
         method : string. 'bayesian' or 'fast_test'. Bayesian will run the grid
                  method and output the results. fast_test runs a Monte Carlo
                  error propagation from a normal distribution for the two
@@ -84,22 +85,32 @@ class WhiteDwarf:
                         after making them.
         """
 
-        self.teff = teff0
-        self.e_teff = e_teff0
-        self.logg = logg0
-        self.e_logg = e_logg0
-        # If the input parameters are scalars, we make them an array
-        if not isinstance(teff0, np.ndarray):
-            self.teff = np.array([teff0])
-            self.e_teff = np.array([e_teff0])
-            self.logg = np.array([logg0])
-            self.e_logg = np.array([e_logg0])
-        # Initialize the parameters of a single WD, to run one WD in case
-        # an array is given
-        self.teff_i = 0
-        self.e_teff_i = 0
-        self.logg_i = 0
-        self.e_logg_i = 0
+        teff0   = np.atleast_1d(np.asarray(teff0,   dtype=float))
+        e_teff0 = np.atleast_1d(np.asarray(e_teff0, dtype=float))
+        logg0   = np.atleast_1d(np.asarray(logg0,   dtype=float))
+        e_logg0 = np.atleast_1d(np.asarray(e_logg0, dtype=float))
+
+        # Determine target length N via broadcasting rules
+        # (This raises if shapes are incompatible)
+        N = np.broadcast(teff0, e_teff0, logg0, e_logg0).shape[0]
+
+        # Broadcast all to length N
+        self.teff   = np.broadcast_to(teff0,   (N,)).copy()
+        self.e_teff = np.broadcast_to(e_teff0, (N,)).copy()
+        self.logg   = np.broadcast_to(logg0,   (N,)).copy()
+        self.e_logg = np.broadcast_to(e_logg0, (N,)).copy()
+
+        if cov is None:
+            self.cov = np.zeros_like(self.teff)
+        else:
+            self.cov   = np.broadcast_to(np.atleast_1d(np.asarray(cov,   dtype=float)), (N,)).copy()
+
+        self.mu = np.column_stack([self.teff, self.logg])
+        self.sigma = np.array([
+            [[et**2, c], [c, el**2]]
+            for et, el, c in zip(self.e_teff, self.e_logg, self.cov)
+        ])
+
         # Initialize models
         self.method = method
         self.model_wd = model_wd
@@ -184,23 +195,21 @@ class WhiteDwarf:
 
         if self.method == 'bayesian':
             # Look over every WD given
-            for x, y, z, w in zip(self.teff, self.e_teff, self.logg,
-                                  self.e_logg):
-                print(f'Running Teff = {np.round(x, 2)}' + r' +/- '
-                      + f'{np.round(y, 2)} K, ' + f'logg = {np.round(z, 2)}'
-                      + r' +/- ' + f'{np.round(w, 2)}')
-                self.teff_i = x
-                self.e_teff_i = y
-                self.logg_i = z
-                self.e_logg_i = w
+            for ii, (mu_i, sigma_i) in enumerate(zip(self.mu, self.sigma)):
+                print(f'Running Teff = {np.round(mu_i[0], 2)}' + r' +/- '
+                      + f'{np.round(np.sqrt(sigma_i[0,0]), 2)} K, ' + f'logg = {np.round(mu_i[1], 2)}'
+                      + r' +/- ' + f'{np.round(np.sqrt(sigma_i[1,1]), 2)}')
 
-                if np.isnan(x + y + z + w):
+                self.mu_i = mu_i
+                self.sigma_i = sigma_i
+
+                if np.any(np.isnan(self.mu_i)) or np.any(np.isnan(self.sigma_i)):
                     print('Warning: teff, logg or their uncertainties are ' +
                           'nans.')
                     results_i = np.ones(15) * np.nan
                 else:
                     # Set name of path and wd models to identify results
-                    self.wd_path_id = self.get_wd_path_id()
+                    self.wd_path_id = self.get_wd_path_id(ii)
 
                     # Estimate the age of the WDs using the Bayesian method
                     results_i = self.calc_wd_age_bayesian()
@@ -223,7 +232,7 @@ class WhiteDwarf:
         """
 
         # Initial calculation of the parameters of the WD and the progenitor
-        r = calc_single_star_params(self.teff_i, self.logg_i, self.model_wd,
+        r = calc_single_star_params(self.mu_i[0], self.mu_i[1], self.model_wd,
                                     self.model_ifmr, self.feh, self.vvcrit)
         cool_age, final_mass, initial_mass, ms_age = r
 
@@ -279,10 +288,10 @@ class WhiteDwarf:
 
         return results_i
 
-    def get_wd_path_id(self):
+    def get_wd_path_id(self, ii):
         # Set the name to identify the results from each white dwarf
-        tg_name = 'teff_' + str(self.teff_i) + '_logg_' \
-                  + str(np.round(self.logg_i,2))
+        tg_name = 'teff_' + str(self.mu[ii,0]) + '_logg_' \
+                  + str(np.round(self.mu[ii,1],2))
         mist_name = '_feh_' + self.feh + '_vvcrit_' + self.vvcrit
         models_name = mist_name + '_' + self.model_wd + '_' + self.model_ifmr
         return self.path + tg_name + models_name
@@ -322,13 +331,13 @@ class WhiteDwarf:
             # cooling models to avoid grid evaluation in regions far from
             # the answer.
             test_lim = []
-            if self.teff_i < 4000:
+            if self.mu_i[0] < 4000:
                 print('Warning: You might need to adjust min_mi, max_mi, '
                       'min_log10_tcool and max_log10_tcool manually to obtain '
                       'a better evaluation of the posterior.')
                 default_values = [mi_min_wide_range, mi_max_wide_range,
                                   8, log10_tcool_max_wide_range]
-            elif self.teff_i > 1.5e4:
+            elif self.mu_i[0] > 1.5e4:
                 default_values = [mi_min_wide_range, mi_max_wide_range,
                                   log10_tcool_min_wide_range, 9.6989700043360]
             else:
@@ -345,8 +354,7 @@ class WhiteDwarf:
             assert all([x != '' for x in test_lim])
 
             # Once the grid is set, it calculates the posterior in the grid.
-            res = calc_posterior_grid(self.teff_i, self.e_teff_i, self.logg_i,
-                                      self.e_logg_i, self.models0,
+            res = calc_posterior_grid(self.mu_i, self.sigma_i, self.models0,
                                       n_mi=256, n_log10_tcool=256,
                                       n_delta=self.n_delta, min_mi=test_lim[0],
                                       max_mi=test_lim[1],
@@ -397,8 +405,7 @@ class WhiteDwarf:
                     self.min_log10_tcool != '', self.max_log10_tcool != ''])
 
         # Calculate the posterior using a grid with the set limits
-        res = calc_posterior_grid(self.teff_i, self.e_teff_i, self.logg_i,
-                                  self.e_logg_i, self.models0,
+        res = calc_posterior_grid(self.mu_i, self.sigma_i, self.models0,
                                   n_mi=self.n_mi,
                                   n_log10_tcool=self.n_log10_tcool,
                                   n_delta=self.n_delta, min_mi=self.min_mi,
@@ -599,10 +606,7 @@ class WhiteDwarf:
 
         """
 
-        distributions = estimate_parameters_fast_test(np.array([self.teff_i]),
-                                                      np.array([self.e_teff_i]),
-                                                      np.array([self.logg_i]),
-                                                      np.array([self.e_logg_i]),
+        distributions = estimate_parameters_fast_test(self.mu, self.sigma,
                                                       self.model_ifmr,
                                                       self.model_wd, self.feh,
                                                       self.vvcrit, self.n_mc,
@@ -671,8 +675,7 @@ class WhiteDwarf:
         parameters of the white dwarf and the progenitor.
         """
 
-        distributions = estimate_parameters_fast_test(self.teff, self.e_teff,
-                                                      self.logg, self.e_logg,
+        distributions = estimate_parameters_fast_test(self.mu, self.sigma,
                                                       self.model_ifmr,
                                                       self.model_wd, self.feh,
                                                       self.vvcrit, self.n_mc,
@@ -740,7 +743,7 @@ class WhiteDwarf:
             self.logg_i = x2
             e_x1 = self.e_teff[i]
             e_x2 = self.e_logg[i]
-            self.wd_path_id = self.get_wd_path_id()
+            self.wd_path_id = self.get_wd_path_id(i)
 
             print(f'Running teff:{np.round(x1,2)} +/- {np.round(e_x1,2)} ' +
                   f'logg:{np.round(x2,2)} +/- {np.round(e_x2,2)}')

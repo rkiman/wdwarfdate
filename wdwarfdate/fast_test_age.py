@@ -9,7 +9,7 @@ from .cooling_age import calc_cooling_age
 from .ms_age import calc_ms_age
 
 
-def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
+def estimate_parameters_fast_test(mu, sigma, model_ifmr,
                                   model_wd, feh, vvcrit, n_mc, max_age,
                                   warning=1):
 
@@ -21,17 +21,15 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
     log_total_age_dist = []
 
 
-    for teff_i, e_teff_i, logg_i, e_logg_i,i in zip(teff, e_teff,
-                                                    logg, e_logg,
-                                                    range(len(teff))):
-        if np.isnan(teff_i + e_teff_i + logg_i + e_logg_i):
+    for ii, (mu_i, sigma_i) in enumerate(zip(mu, sigma)):
+        if np.any(np.isnan(mu_i)) or np.any(np.isnan(sigma_i)):
             log_cooling_age_dist.append(np.array([np.nan]))
             final_mass_dist.append(np.array([np.nan]))
             initial_mass_dist.append(np.array([np.nan]))
             log_ms_age_dist.append(np.array([np.nan]))
             log_total_age_dist.append(np.array([np.nan]))
         else:
-            approx = calc_single_star_params(teff_i, logg_i, model_wd,
+            approx = calc_single_star_params(mu_i[0], mu_i[1], model_wd,
                                              model_ifmr, feh, vvcrit)
             cool_age_i, final_mass_i, initial_mass_i, ms_age_i = approx
 
@@ -39,8 +37,8 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
                 if warning == 1:
                     print("Warning: Effective temperature and/or surface " +
                           "gravity are outside of the allowed values of " +
-                          f"the model. Teff = {np.round(teff_i, 2)} K, " +
-                          f"logg = {np.round(logg_i, 2)}")
+                          f"the model. Teff = {np.round(mu_i[0], 2)} K, " +
+                          f"logg = {np.round(mu_i[1], 2)}")
                 log_cooling_age_dist.append(np.array([np.nan]))
                 final_mass_dist.append(np.array([np.nan]))
                 initial_mass_dist.append(np.array([np.nan]))
@@ -51,11 +49,12 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
                     print("Warning: Final mass is outside the range allowed " +
                           "by the IFMR. Cannot estimate initial mass, main " +
                           "sequence age or total age. " +
-                          f"Teff = {np.round(teff_i, 2)} K, " +
-                          f"logg = {np.round(logg_i, 2)}, " +
+                          f"Teff = {np.round(mu_i[0], 2)} K, " +
+                          f"logg = {np.round(mu_i[1], 2)}, " +
                           f"Final mass ~ {np.round(final_mass_i, 2)} Msun ")
-                teff_dist = np.random.normal(teff_i, e_teff_i, n_mc)
-                logg_dist = np.random.normal(logg_i, e_logg_i, n_mc)
+                samples = np.random.multivariate_normal(mean=mu_i, cov=sigma_i, size=n_mc)
+                teff_dist = samples[:,0]
+                logg_dist = samples[:,1]
                 res = calc_cooling_age(teff_dist, logg_dist, model=model_wd)
                 log_cooling_age_dist_i, final_mass_dist_i = res
 
@@ -71,11 +70,12 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
                     print("Warning: Initial mass is outside of the range " +
                           "allowed by the MIST isochrones. Cannot estimate " +
                           "main sequence age or total age. " +
-                          f"Teff = {np.round(teff_i, 2)} K, " +
-                          f"logg = {np.round(logg_i, 2)}, " +
+                          f"Teff = {np.round(mu_i[0], 2)} K, " +
+                          f"logg = {np.round(mu_i[1], 2)}, " +
                           f"Initial mass ~ {np.round(initial_mass_i, 2)} Msun")
-                teff_dist = np.random.normal(teff_i, e_teff_i, n_mc)
-                logg_dist = np.random.normal(logg_i, e_logg_i, n_mc)
+                samples = np.random.multivariate_normal(mean=mu_i, cov=sigma_i, size=n_mc)
+                teff_dist = samples[:,0]
+                logg_dist = samples[:,1]
                 res = calc_cooling_age(teff_dist, logg_dist, model=model_wd)
                 log_cooling_age_dist_i, final_mass_dist_i = res
                 ini_mass_dist_i = calc_initial_mass(model_ifmr,
@@ -94,8 +94,9 @@ def estimate_parameters_fast_test(teff, e_teff, logg, e_logg, model_ifmr,
                 log_ms_age_dist.append(np.array([np.nan]))
                 log_total_age_dist.append(np.array([np.nan]))
             else:
-                teff_dist = np.random.normal(teff_i, e_teff_i, n_mc)
-                logg_dist = np.random.normal(logg_i, e_logg_i, n_mc)
+                samples = np.random.multivariate_normal(mean=mu_i, cov=sigma_i, size=n_mc)
+                teff_dist = samples[:,0]
+                logg_dist = samples[:,1]
                 res = calc_cooling_age(teff_dist, logg_dist, model=model_wd)
                 log_cooling_age_dist_i, final_mass_dist_i = res
                 ini_mass_dist_i = calc_initial_mass(model_ifmr,

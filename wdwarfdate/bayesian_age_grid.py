@@ -37,7 +37,7 @@ def get_other_params(mi_sample, log10_tcool_sample, delta_m_sample, models):
     return mf_true_sample, log10_tms_sample, log10_ttot_sample
 
 
-def calc_posterior_grid(teff_i, e_teff_i, logg_i, e_logg_i, models, n_mi,
+def calc_posterior_grid(mu, sigma, models, n_mi,
                         n_log10_tcool, n_delta, min_mi, max_mi,
                         min_log10_tcool, max_log10_tcool, max_log10_age):
     """
@@ -97,10 +97,16 @@ def calc_posterior_grid(teff_i, e_teff_i, logg_i, e_logg_i, models, n_mi,
 
     teff = f_teff(log10_mf_true_grid, log10_tcool_grid)
     logg = f_logg(log10_mf_true_grid, log10_tcool_grid)
-
+    
+    x = np.array([teff, logg])
+    diff = x - mu[:, None, None, None]
+    
     # Calculate log likelihood
-    log_likelihood = -0.5 * ((teff - teff_i) ** 2 / e_teff_i ** 2
-                             + (logg - logg_i) ** 2 / (e_logg_i ** 2))
+    log_likelihood = -0.5 * (
+        2 * np.log(2*np.pi) 
+        + np.log(np.linalg.det(sigma)) 
+        + np.einsum('iabc,ij,jabc->abc', diff, np.linalg.inv(sigma), diff)
+    )
     log_likelihood[mask_nan] = -np.inf
 
     # Calculate log posterior
